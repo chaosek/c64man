@@ -2,12 +2,12 @@
   "name": "C64 Disk Manager",
   "short_name": "C64 Manager",
   "description": "C64 disk image browser and VICE emulator",
-  "start_url": "./",
-  "scope": "./",
+  "start_url": "/c64man/",
+  "scope": "/c64man/",
   "display": "standalone",
   "orientation": "landscape",
-  "background_color": "#18186a",
-  "theme_color": "#18186a",
+  "background_color": "#002255",
+  "theme_color": "#002255",
   "icons": [
     {
       "src": "icon-192.png",

@@ -383,7 +383,7 @@ body { background:#080810; display:flex; flex-direction:column; }
 
 <div id="top">
   <div class="logo"><span class="star">&#x2605;</span>&#x20;C64 DISK MANAGER&#x20;<span class="star">&#x2605;</span></div>
-  <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--c64bord);letter-spacing:1px">V2.5</span>
+  <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--c64bord);letter-spacing:1px">V2.6</span>
   <span class="hint">LOAD FOLDER &#x2192; SELECT .D64 &#x2192; CLICK FILE TO RUN</span>
   <span id="clk"></span>
 </div>
@@ -1206,26 +1206,6 @@ document.getElementById('mob-back').addEventListener('click', mobBrowse);
 
 // ══ PWA — MANIFEST + SERVICE WORKER ════════════════════════
 (function() {
-  // Inline manifest as blob URL so it works from a local file
-  const manifest = {
-    name: 'C64 Disk Manager',
-    short_name: 'C64 Manager',
-    description: 'C64 disk image browser and VICE emulator',
-    start_url: '.',
-    display: 'standalone',
-    orientation: 'any',
-    background_color: '#18186a',
-    theme_color: '#18186a',
-    icons: [
-      { src: 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192"><rect width="192" height="192" fill="#18186a"/><rect x="16" y="16" width="160" height="160" rx="18" fill="#3535c0"/><text x="96" y="130" font-size="100" text-anchor="middle" fill="#d0d0ff" font-family="monospace" font-weight="bold">64</text></svg>`),
-        sizes: '192x192', type: 'image/svg+xml', purpose: 'any maskable' },
-      { src: 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" fill="#18186a"/><rect x="32" y="32" width="448" height="448" rx="48" fill="#3535c0"/><text x="256" y="360" font-size="280" text-anchor="middle" fill="#d0d0ff" font-family="monospace" font-weight="bold">64</text></svg>`),
-        sizes: '512x512', type: 'image/svg+xml', purpose: 'any maskable' }
-    ]
-  };
-  const mBlob = new Blob([JSON.stringify(manifest)], {type:'application/json'});
-  document.getElementById('pwa-manifest').href = URL.createObjectURL(mBlob);
-
   // Service Worker — caches app shell for offline use
   if ('serviceWorker' in navigator) {
     const swCode = `
