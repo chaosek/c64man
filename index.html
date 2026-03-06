@@ -132,12 +132,17 @@ body { background:#080810; display:flex; flex-direction:column; }
 
 /* loading bar */
 #load-bar {
-  display:none; position:absolute; bottom:0; left:0; right:0; height:3px;
+  display:none; position:absolute; bottom:0; left:0; right:0; height:4px;
   background:var(--c64dark); z-index:10;
 }
 #load-bar-fill {
   height:100%; width:0; background:var(--c64cyan);
-  transition:width .1s linear;
+  transition:width .2s ease;
+}
+@keyframes loadpulse {
+  0%   { width:0%;   margin-left:0; }
+  50%  { width:60%;  margin-left:20%; }
+  100% { width:0%;   margin-left:100%; }
 }
 
 /* drop zone */
@@ -977,11 +982,21 @@ function decodePath(p) {
 function buildTree(fileList) {
   const files = Array.from(fileList);
   if (!files.length) return [];
+  const mob = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || window.innerWidth <= 900;
 
-  // On mobile Android the path contains system prefixes like "primary:Documents/..."
-  // Show flat list of D64 files only, grouped by folder name (last path segment before filename)
-  const isMob = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || window.innerWidth <= 900;
+  if (mob) {
+    // Mobile: flat list of D64 files only — just the filename, no folders
+    const nodes = [];
+    files.forEach(f => {
+      if (!f.name.toLowerCase().endsWith('.d64')) return;
+      const name = decodePath(f.name);
+      nodes.push({ path: name, name, depth:0, isFolder:false, isD64:true, children:[], size:f.size, file:f });
+    });
+    nodes.sort((a,b) => a.name.localeCompare(b.name, undefined, {numeric:true}));
+    return nodes;
+  }
 
+  // Desktop: full folder tree
   const nm = {};
   const get = parts => {
     const key = parts.join('/');
@@ -989,62 +1004,30 @@ function buildTree(fileList) {
       depth:parts.length-1, isFolder:false, isD64:false, children:[], size:0, file:null };
     return nm[key];
   };
-
   files.forEach(f => {
-    const rawPath = f.webkitRelativePath || f.name;
-    // Decode each segment
-    const allParts = rawPath.split('/').map(decodePath);
-    const isD64 = f.name.toLowerCase().endsWith('.d64');
-
-    if (isMob) {
-      // Mobile: flat list — just show filename directly under root
-      if (!isD64) return; // skip non-D64 on mobile
-      const fname = allParts[allParts.length - 1];
-      const root = get(['files']);
-      root.isFolder = true;
-      root.name = 'D64';
-      root.depth = 0;
-      const node = get(['files', fname]);
-      node.isD64 = true;
-      node.size = f.size;
-      node.file = f;
-      if (!root.children.find(c => c.path === node.path)) root.children.push(node);
-    } else {
-      // Desktop: full tree
-      const parts = allParts;
-      for (let i = 1; i <= parts.length; i++) {
-        const n = get(parts.slice(0, i));
-        if (i < parts.length) { n.isFolder = true; }
-        else { n.isD64 = isD64; n.size = f.size; n.file = f; }
-        if (i > 1) {
-          const p = get(parts.slice(0, i-1));
-          if (!p.children.find(c => c.path === n.path)) p.children.push(n);
-        }
+    const parts = (f.webkitRelativePath || f.name).split('/').map(decodePath);
+    for (let i=1; i<=parts.length; i++) {
+      const n = get(parts.slice(0,i));
+      if (i < parts.length) { n.isFolder = true; }
+      else { n.isD64 = f.name.toLowerCase().endsWith('.d64'); n.size=f.size; n.file=f; }
+      if (i > 1) {
+        const p = get(parts.slice(0,i-1));
+        if (!p.children.find(c=>c.path===n.path)) p.children.push(n);
       }
     }
   });
-
   function srt(ns) {
     ns.sort((a,b) => {
-      if (a.isFolder !== b.isFolder) return a.isFolder ? -1 : 1;
-      if (a.isD64 !== b.isD64) return a.isD64 ? -1 : 1;
-      return a.name.localeCompare(b.name, undefined, {numeric:true});
+      if (a.isFolder!==b.isFolder) return a.isFolder?-1:1;
+      if (a.isD64!==b.isD64) return a.isD64?-1:1;
+      return a.name.localeCompare(b.name,undefined,{numeric:true});
     });
     ns.forEach(n => n.children.length && srt(n.children));
   }
-
-  if (isMob) {
-    const root = nm['files'];
-    if (!root) return [];
-    srt(root.children);
-    // Return children directly — no root folder shown
-    return root.children.map(n => { n.depth = 0; return n; });
-  }
-
-  const rootName = decodePath((files[0].webkitRelativePath || files[0].name).split('/')[0]);
+  const rootName = decodePath((files[0].webkitRelativePath||files[0].name).split('/')[0]);
   const rn = nm[rootName];
   if (!rn) return [];
-  rn.isFolder = true; srt(rn.children); return [rn];
+  rn.isFolder=true; srt(rn.children); return [rn];
 }
 
 function hasMatch(n,f){ if(!f)return true; if(n.name.toLowerCase().includes(f))return true; return n.children.some(c=>hasMatch(c,f)); }
@@ -1102,13 +1085,11 @@ function countTree(nodes,s={f:0,d:0,x:0}){
 function loadFolder(fl){
   const bar  = document.getElementById('load-bar');
   const fill = document.getElementById('load-bar-fill');
-  // Show bar immediately, wait 2 frames for repaint, then do heavy work
   bar.style.display = 'block';
-  fill.style.transition = 'none';
-  fill.style.width = '15%';
-  requestAnimationFrame(() => requestAnimationFrame(() => {
-    fill.style.transition = 'width .15s linear';
-    fill.style.width = '70%';
+  fill.style.width = '0';
+  // Use CSS animation for indeterminate progress
+  fill.style.animation = 'loadpulse 1s ease-in-out infinite';
+  setTimeout(() => {
     roots=buildTree(fl); expanded=new Set();
     if(roots.length && roots[0].isFolder) expanded.add(roots[0].path);
     document.getElementById('dz').style.display='none';
@@ -1120,10 +1101,11 @@ function loadFolder(fl){
     document.getElementById('px').textContent=s.x;
     document.getElementById('pcpath').textContent=roots[0]?.name||'—';
     renderTree();
-    setS(`Načteno: ${s.d} disket, ${s.f} složek`);
+    setS('Načteno: ' + s.d + ' disket, ' + s.f + ' složek');
+    fill.style.animation = 'none';
     fill.style.width = '100%';
-    setTimeout(() => { bar.style.display='none'; fill.style.width='0'; }, 400);
-  }));
+    setTimeout(() => { bar.style.display='none'; fill.style.width='0'; }, 300);
+  }, 50);
 }
 
 // Folder open via input

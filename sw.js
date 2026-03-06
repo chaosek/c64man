@@ -1,4 +1,4 @@
-const CACHE = 'c64mgr-v5';
+const CACHE = 'c64mgr-v6';
 // Cache only CDN assets, never the app itself so updates work instantly
 self.addEventListener('install', e => {
   self.skipWaiting();
