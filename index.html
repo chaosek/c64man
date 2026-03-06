@@ -383,7 +383,7 @@ body { background:#080810; display:flex; flex-direction:column; }
 
 <div id="top">
   <div class="logo"><span class="star">&#x2605;</span>&#x20;C64 DISK MANAGER&#x20;<span class="star">&#x2605;</span></div>
-  <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--c64bord);letter-spacing:1px">V2.7</span>
+  <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--c64bord);letter-spacing:1px">V2.8</span>
   <span class="hint">LOAD FOLDER &#x2192; SELECT .D64 &#x2192; CLICK FILE TO RUN</span>
   <span id="clk"></span>
 </div>
@@ -831,17 +831,22 @@ function launchEmulator(entry) {
     gameName = fname + '.prg';
   }
 
-  // Switch to play mode FIRST so #rp is visible before we touch the iframe
   if (isMobile()) mobPlay();
 
   document.getElementById('emu-placeholder').style.display = 'none';
   document.getElementById('prev-info').textContent =
     (isFirst ? 'D64 · FULL DISK' : 'PRG · ' + entry.blocks + ' BLK');
 
-  const frame = freshEmuFrame();
+  const frame = document.getElementById('emu-frame');
   frame.style.display = 'block';
-  // Delay gives DOM time to repaint after mobPlay before iframe loads
-  setTimeout(() => { frame.srcdoc = buildSrcdoc(gameUrl, gameName); }, 100);
+
+  // Wait for about:blank to finish loading, then set srcdoc
+  const launch = () => { frame.srcdoc = buildSrcdoc(gameUrl, gameName); };
+  if (frame.src && frame.src.indexOf('about:blank') !== -1) {
+    frame.onload = () => { frame.onload = null; launch(); };
+  } else {
+    setTimeout(launch, 100);
+  }
 }
 
 function emuMsg(msg, isErr) {
@@ -1157,27 +1162,17 @@ function getEmuFrame() {
 }
 
 function freshEmuFrame() {
-  const old = document.getElementById('emu-frame');
-  if (!old) {
-    // fallback — create and append to prev-body
-    const f = document.createElement('iframe');
-    f.id = 'emu-frame';
-    f.style.cssText = 'display:none;width:100%;height:100%;border:none;';
-    document.getElementById('prev-body').appendChild(f);
-    return f;
-  }
-  const f = document.createElement('iframe');
-  f.id = 'emu-frame';
-  f.style.cssText = 'display:none;width:100%;height:100%;border:none;';
-  old.parentNode.replaceChild(f, old);
-  return f;
+  // Just return existing frame — we reset it in launchEmulator
+  return document.getElementById('emu-frame');
 }
 
 function mobBrowse() {
   document.body.classList.remove('mob-play');
   document.body.classList.add('mob-browse');
-  // Reset iframe — must happen after class change so #rp exists in DOM
-  freshEmuFrame();
+  // Stop emulator by pointing frame to blank
+  const frame = document.getElementById('emu-frame');
+  frame.style.display = 'none';
+  frame.src = 'about:blank';
   document.getElementById('emu-placeholder').style.display = 'flex';
   if (emuBlobUrl)  { URL.revokeObjectURL(emuBlobUrl);  emuBlobUrl  = null; }
   if (emuBlobUrl2) { URL.revokeObjectURL(emuBlobUrl2); emuBlobUrl2 = null; }
