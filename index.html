@@ -383,7 +383,7 @@ body { background:#080810; display:flex; flex-direction:column; }
 
 <div id="top">
   <div class="logo"><span class="star">&#x2605;</span>&#x20;C64 DISK MANAGER&#x20;<span class="star">&#x2605;</span></div>
-  <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--c64bord);letter-spacing:1px">V2.8</span>
+  <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--c64bord);letter-spacing:1px">V2.9</span>
   <span class="hint">LOAD FOLDER &#x2192; SELECT .D64 &#x2192; CLICK FILE TO RUN</span>
   <span id="clk"></span>
 </div>
@@ -839,6 +839,7 @@ function launchEmulator(entry) {
 
   const frame = document.getElementById('emu-frame');
   frame.style.display = 'block';
+  frame.removeAttribute('srcdoc');
 
   // Wait for about:blank to finish loading, then set srcdoc
   const launch = () => { frame.srcdoc = buildSrcdoc(gameUrl, gameName); };
@@ -1169,9 +1170,9 @@ function freshEmuFrame() {
 function mobBrowse() {
   document.body.classList.remove('mob-play');
   document.body.classList.add('mob-browse');
-  // Stop emulator by pointing frame to blank
   const frame = document.getElementById('emu-frame');
   frame.style.display = 'none';
+  frame.removeAttribute('srcdoc');
   frame.src = 'about:blank';
   document.getElementById('emu-placeholder').style.display = 'flex';
   if (emuBlobUrl)  { URL.revokeObjectURL(emuBlobUrl);  emuBlobUrl  = null; }
