@@ -390,7 +390,7 @@ body.emu-focus .c64foot { font-size: 10px; }
 
 <div id="top">
   <div class="logo"><span class="star">&#x2605;</span>&#x20;C64 DISK MANAGER&#x20;<span class="star">&#x2605;</span></div>
-  <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--c64bord);letter-spacing:1px">V4.0</span>
+  <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--c64bord);letter-spacing:1px">V4.1</span>
   <span class="hint">LOAD FOLDER &#x2192; SELECT .D64 &#x2192; CLICK FILE TO RUN</span>
   <span id="clk"></span>
 </div>
@@ -844,12 +844,15 @@ function launchEmulator(entry) {
   document.getElementById('prev-info').textContent =
     (isFirst ? 'D64 · FULL DISK' : 'PRG · ' + entry.blocks + ' BLK');
 
-  const old = document.getElementById('emu-frame');
-  const frame = document.createElement('iframe');
-  frame.id = 'emu-frame';
-  frame.style.cssText = 'display:block;width:100%;height:100%;border:none;';
-  old.parentNode.replaceChild(frame, old);
-  frame.srcdoc = buildSrcdoc(gameUrl, gameName);
+  // Wait for resize animation to finish before launching emulator
+  setTimeout(() => {
+    const old = document.getElementById('emu-frame');
+    const frame = document.createElement('iframe');
+    frame.id = 'emu-frame';
+    frame.style.cssText = 'display:block;width:100%;height:100%;border:none;';
+    old.parentNode.replaceChild(frame, old);
+    frame.srcdoc = buildSrcdoc(gameUrl, gameName);
+  }, 350);
 }
 
 function emuMsg(msg, isErr) {
@@ -1186,11 +1189,18 @@ if (isMobile() && screen.orientation && screen.orientation.lock) {
 
 // ══ FOCUS-BASED LAYOUT ══════════════════════════════════════
 function setFocus(mode) {
+  const lp = document.getElementById('lp');
+  const mp = document.getElementById('mp');
   document.body.classList.remove('emu-focus', 'browse-focus');
-  // Clear inline widths set by resizer so CSS classes take effect
-  document.getElementById('lp').style.width = '';
-  document.getElementById('mp').style.width = '';
-  if (mode) document.body.classList.add(mode);
+  if (mode === 'emu-focus') {
+    lp.style.width = '160px';
+    mp.style.width = '200px';
+    document.body.classList.add('emu-focus');
+  } else {
+    lp.style.width = '460px';
+    mp.style.width = '580px';
+    document.body.classList.add('browse-focus');
+  }
 }
 
 // Clicking either side panel → browse mode
