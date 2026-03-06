@@ -971,13 +971,17 @@ function loadD64(file, name) {
 let roots=[], expanded=new Set(), selNode=null, flatNodes=[];
 
 function decodePath(p) {
-  // Decode Android URI-encoded paths like primary%3ADocuments%2FD64
   try { return decodeURIComponent(p.replace(/\+/g, ' ')); } catch(e) { return p; }
 }
 
 function buildTree(fileList) {
   const files = Array.from(fileList);
   if (!files.length) return [];
+
+  // On mobile Android the path contains system prefixes like "primary:Documents/..."
+  // Show flat list of D64 files only, grouped by folder name (last path segment before filename)
+  const isMob = window.innerWidth <= 700;
+
   const nm = {};
   const get = parts => {
     const key = parts.join('/');
@@ -985,33 +989,62 @@ function buildTree(fileList) {
       depth:parts.length-1, isFolder:false, isD64:false, children:[], size:0, file:null };
     return nm[key];
   };
+
   files.forEach(f => {
-    // Decode the full path first, then split
     const rawPath = f.webkitRelativePath || f.name;
-    const decoded = rawPath.split('/').map(decodePath);
-    const parts = decoded;
-    for (let i=1; i<=parts.length; i++) {
-      const n = get(parts.slice(0,i));
-      if (i < parts.length) { n.isFolder = true; }
-      else { n.isD64 = f.name.toLowerCase().endsWith('.d64'); n.size=f.size; n.file=f; }
-      if (i > 1) {
-        const p = get(parts.slice(0,i-1));
-        if (!p.children.find(c=>c.path===n.path)) p.children.push(n);
+    // Decode each segment
+    const allParts = rawPath.split('/').map(decodePath);
+    const isD64 = f.name.toLowerCase().endsWith('.d64');
+
+    if (isMob) {
+      // Mobile: flat list — just show filename directly under root
+      if (!isD64) return; // skip non-D64 on mobile
+      const fname = allParts[allParts.length - 1];
+      const root = get(['files']);
+      root.isFolder = true;
+      root.name = 'D64';
+      root.depth = 0;
+      const node = get(['files', fname]);
+      node.isD64 = true;
+      node.size = f.size;
+      node.file = f;
+      if (!root.children.find(c => c.path === node.path)) root.children.push(node);
+    } else {
+      // Desktop: full tree
+      const parts = allParts;
+      for (let i = 1; i <= parts.length; i++) {
+        const n = get(parts.slice(0, i));
+        if (i < parts.length) { n.isFolder = true; }
+        else { n.isD64 = isD64; n.size = f.size; n.file = f; }
+        if (i > 1) {
+          const p = get(parts.slice(0, i-1));
+          if (!p.children.find(c => c.path === n.path)) p.children.push(n);
+        }
       }
     }
   });
+
   function srt(ns) {
-    ns.sort((a,b)=>{
-      if(a.isFolder!==b.isFolder) return a.isFolder?-1:1;
-      if(a.isD64!==b.isD64) return a.isD64?-1:1;
-      return a.name.localeCompare(b.name,undefined,{numeric:true});
+    ns.sort((a,b) => {
+      if (a.isFolder !== b.isFolder) return a.isFolder ? -1 : 1;
+      if (a.isD64 !== b.isD64) return a.isD64 ? -1 : 1;
+      return a.name.localeCompare(b.name, undefined, {numeric:true});
     });
-    ns.forEach(n=>n.children.length&&srt(n.children));
+    ns.forEach(n => n.children.length && srt(n.children));
   }
+
+  if (isMob) {
+    const root = nm['files'];
+    if (!root) return [];
+    srt(root.children);
+    // Return children directly — no root folder shown
+    return root.children.map(n => { n.depth = 0; return n; });
+  }
+
   const rootName = decodePath((files[0].webkitRelativePath || files[0].name).split('/')[0]);
   const rn = nm[rootName];
   if (!rn) return [];
-  rn.isFolder=true; srt(rn.children); return [rn];
+  rn.isFolder = true; srt(rn.children); return [rn];
 }
 
 function hasMatch(n,f){ if(!f)return true; if(n.name.toLowerCase().includes(f))return true; return n.children.some(c=>hasMatch(c,f)); }
@@ -1067,17 +1100,17 @@ function countTree(nodes,s={f:0,d:0,x:0}){
 }
 
 function loadFolder(fl){
-  // Show loading bar
   const bar  = document.getElementById('load-bar');
   const fill = document.getElementById('load-bar-fill');
+  // Show bar immediately, wait 2 frames for repaint, then do heavy work
   bar.style.display = 'block';
-  fill.style.width = '20%';
-
-  // Defer heavy work so browser can repaint the bar first
-  setTimeout(() => {
-    fill.style.width = '60%';
+  fill.style.transition = 'none';
+  fill.style.width = '15%';
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    fill.style.transition = 'width .15s linear';
+    fill.style.width = '70%';
     roots=buildTree(fl); expanded=new Set();
-    if(roots.length) expanded.add(roots[0].path);
+    if(roots.length && roots[0].isFolder) expanded.add(roots[0].path);
     document.getElementById('dz').style.display='none';
     document.getElementById('tw').style.display='block';
     document.getElementById('tb').style.display='flex';
@@ -1086,12 +1119,11 @@ function loadFolder(fl){
     document.getElementById('pd').textContent=s.d;
     document.getElementById('px').textContent=s.x;
     document.getElementById('pcpath').textContent=roots[0]?.name||'—';
-    fill.style.width = '90%';
     renderTree();
     setS(`Načteno: ${s.d} disket, ${s.f} složek`);
     fill.style.width = '100%';
     setTimeout(() => { bar.style.display='none'; fill.style.width='0'; }, 400);
-  }, 30);
+  }));
 }
 
 // Folder open via input
