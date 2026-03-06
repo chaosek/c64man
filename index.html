@@ -210,10 +210,23 @@ body.play-mode #rz2 { display:none; }
 
 @media (max-width:900px) {
   .rz { display:none !important; }
-  #lp { width:160px !important; min-width:160px !important; max-width:160px !important; }
-  #dp { flex:0 0 calc(100% - 160px) !important; }
-  body.play-mode #dp { flex-basis:0 !important; }
-  #ep { flex:1 !important; }
+  #lp { width:160px !important; min-width:160px !important; max-width:160px !important; flex-shrink:0 !important; }
+  /* ep a dp sdílí stejný prostor — dp je navrchu v browse módu */
+  #ep { flex:1 1 0 !important; position:relative; }
+  #dp {
+    position:absolute !important;
+    top:0; right:0; bottom:0;
+    left:160px !important;
+    width:auto !important; flex:none !important;
+    transition:transform .35s ease;
+    transform:translateX(0);
+    z-index:20;
+  }
+  body.play-mode #dp {
+    transform:translateX(100%) !important;
+  }
+  /* ws potřebuje position:relative pro absolute dp */
+  #ws { position:relative; }
   #top { height:22px; }
   #bot { height:18px; }
   .logo { font-size:9px; }
@@ -233,7 +246,7 @@ body.play-mode #rz2 { display:none; }
 
 <div id="top">
   <div class="logo"><b>★</b> C64 DISK MANAGER <b>★</b></div>
-  <span id="ver">V1.5</span>
+  <span id="ver">V1.6</span>
   <span id="clk"></span>
 </div>
 
