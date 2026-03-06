@@ -108,6 +108,32 @@ body { background:#080810; display:flex; flex-direction:column; }
 /* Back button — hidden, no longer needed */
 #mob-back { display:none !important; }
 
+/* ── FOCUS-BASED LAYOUT ── */
+/* Default: all panels normal */
+#lp { transition: width .25s ease; }
+#mp { transition: width .25s ease; }
+#rp { transition: flex .25s ease; }
+.nn  { transition: font-size .25s ease; }
+.c64hdr { transition: font-size .25s ease; }
+#c64s { transition: font-size .25s ease, padding .25s ease; }
+
+/* EMU focused — side panels shrink */
+body.emu-focus #lp { width: 160px !important; }
+body.emu-focus #mp { width: 200px !important; }
+body.emu-focus #c64s { font-size: 13px; line-height: 14px; padding: 8px 10px; }
+body.emu-focus .dl { line-height: 14px; }
+body.emu-focus .c64hdr { font-size: 10px; }
+body.emu-focus .nn { font-size: 12px; line-height: 15px; }
+body.emu-focus .c64foot { font-size: 10px; }
+
+/* LP focused — left panel expands */
+body.lp-focus #lp { width: 480px !important; }
+body.lp-focus #mp { width: 220px !important; }
+
+/* MP focused — directory panel expands */
+body.mp-focus #mp { width: 620px !important; }
+body.mp-focus #lp { width: 220px !important; }
+
 /* ── LEFT PANEL — C64 PETSCII style ── */
 #lp {
   width:340px; min-width:140px; display:flex; flex-direction:column;
@@ -369,7 +395,7 @@ body { background:#080810; display:flex; flex-direction:column; }
 
 <div id="top">
   <div class="logo"><span class="star">&#x2605;</span>&#x20;C64 DISK MANAGER&#x20;<span class="star">&#x2605;</span></div>
-  <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--c64bord);letter-spacing:1px">V3.7</span>
+  <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--c64bord);letter-spacing:1px">V3.8</span>
   <span class="hint">LOAD FOLDER &#x2192; SELECT .D64 &#x2192; CLICK FILE TO RUN</span>
   <span id="clk"></span>
 </div>
@@ -817,6 +843,8 @@ function launchEmulator(entry) {
     gameName = fname + '.prg';
   }
 
+  setFocus('emu-focus');
+
   document.getElementById('emu-placeholder').style.display = 'none';
   document.getElementById('prev-info').textContent =
     (isFirst ? 'D64 · FULL DISK' : 'PRG · ' + entry.blocks + ' BLK');
@@ -1160,6 +1188,15 @@ function mobPlay() {
 if (isMobile() && screen.orientation && screen.orientation.lock) {
   screen.orientation.lock('landscape').catch(()=>{});
 }
+
+// ══ FOCUS-BASED LAYOUT ══════════════════════════════════════
+function setFocus(mode) {
+  document.body.classList.remove('emu-focus','lp-focus','mp-focus');
+  if (mode) document.body.classList.add(mode);
+}
+
+document.getElementById('lp').addEventListener('click', () => setFocus('lp-focus'));
+document.getElementById('mp').addEventListener('click', () => setFocus('mp-focus'));
 
 // Back button → return to browse
 document.getElementById('mob-back').addEventListener('click', mobBrowse);
