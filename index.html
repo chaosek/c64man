@@ -2,1243 +2,1449 @@
 <html lang="cs">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="screen-orientation" content="landscape">
-<meta name="theme-color" content="#18186a">
-<meta name="mobile-web-app-capable" content="yes">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="C64 Manager">
-<link rel="manifest" id="pwa-manifest">
-<title>C64 Disk Manager</title>
+<meta name="apple-mobile-web-app-title" content="SPZ Skener">
+<meta name="theme-color" content="#080a0d">
+<link rel="manifest" href="/scanSPZ/manifest.json">
+<link rel="apple-touch-icon" href="/scanSPZ/icon.svg">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<title>SPZ Skener</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+/* ── Reset & base ─────────────────────────────────────────────────────────── */
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
 
 :root {
-  --pc-bg:      #13131a;
-  --pc-panel:   #191921;
-  --pc-border:  #262634;
-  --pc-hover:   #1f1f2d;
-  --pc-sel:     #1a2a48;
-  --pc-stxt:    #70a8ff;
-  --pc-txt:     #aaaacb;
-  --pc-dim:     #444458;
-  --pc-fld:     #dca820;
-  --pc-d64:     #38d080;
-  --pc-file:    #5a6878;
-  --pc-hdr:     #0e0e16;
-
-  --c64bg:      #3535c0;
-  --c64dark:    #18186a;
-  --c64bord:    #4848c8;
-  --c64txt:     #7070e8;
-  --c64white:   #d0d0ff;
-  --c64cyan:    #18d8d8;
-  --c64green:   #18d818;
-  --c64yel:     #d8d018;
-  --c64red:     #d81818;
-  --c64mag:     #c818c8;
-  --c64invbg:   #7070e8;
-  --c64invfg:   #3535c0;
-  --scan:       rgba(0,0,14,.06);
+  --bg:       #080a0d;
+  --surface:  #0f1318;
+  --card:     #13181f;
+  --border:   #1c2330;
+  --border2:  #253040;
+  --amber:    #f0c040;
+  --amber2:   #c8981a;
+  --blue:     #3b82f6;
+  --green:    #22c55e;
+  --red:      #ef4444;
+  --text:     #e2e8f0;
+  --muted:    #4a5568;
+  --muted2:   #2d3748;
+  --safe:     env(safe-area-inset-bottom, 0px);
 }
 
-*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
-html,body { height:100%; overflow:hidden; }
-body { background:#080810; display:flex; flex-direction:column; }
+html, body { height: 100%; overflow: hidden; }
 
-/* ── TOP BAR ── */
-#top {
-  height:24px; background:var(--c64dark); border-bottom:1px solid var(--c64bord);
-  display:flex; align-items:center; padding:0 14px; gap:10px; flex-shrink:0;
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Barlow Condensed', sans-serif;
+  user-select: none;
+  -webkit-user-select: none;
 }
+
+/* ── App shell ────────────────────────────────────────────────────────────── */
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  height: 100dvh;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+/* ── Header ───────────────────────────────────────────────────────────────── */
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  padding-top: calc(14px + env(safe-area-inset-top, 0px));
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  z-index: 10;
+}
+
 .logo {
-  font-family:'Share Tech Mono',monospace; font-size:13px; letter-spacing:3px;
-  color:var(--c64txt); text-transform:uppercase; display:flex; align-items:center; gap:6px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
-.star { color:var(--c64yel); }
-.hint { font-family:'Share Tech Mono',monospace; font-size:11px; color:var(--c64bord);
-        letter-spacing:1px; text-transform:uppercase; flex:1; }
-#clk  { font-family:'Share Tech Mono',monospace; font-size:12px; color:var(--c64txt); letter-spacing:2px; }
 
-/* ── WORKSPACE ── */
-#ws { flex:1; display:flex; overflow:hidden; min-height:0; }
+.logo-icon {
+  width: 34px; height: 34px;
+  background: var(--amber);
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px; font-weight: 700;
+  color: #080a0d;
+}
 
-/* ── FORCE LANDSCAPE VIA CSS ROTATION ── */
-@media (max-width: 900px) and (orientation: portrait) {
-  html {
-    transform: rotate(90deg);
-    transform-origin: left top;
-    width: 100vh;
-    height: 100vw;
-    overflow: hidden;
-    position: absolute;
-    top: 0;
-    left: 100%;
+.logo-text {
+  font-size: 1.5rem; font-weight: 800;
+  letter-spacing: 2px; line-height: 1;
+}
+.logo-text span { color: var(--amber); }
+
+.settings-btn {
+  width: 36px; height: 36px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 18px;
+  transition: border-color 0.2s;
+}
+.settings-btn:active { background: var(--border); }
+
+/* ── Tab bar ──────────────────────────────────────────────────────────────── */
+.tabs {
+  display: flex;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.tab {
+  flex: 1; padding: 10px 0;
+  text-align: center;
+  font-size: 0.75rem; font-weight: 700;
+  letter-spacing: 2px; text-transform: uppercase;
+  color: var(--muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+  font-family: 'JetBrains Mono', monospace;
+}
+.tab.active { color: var(--amber); border-bottom-color: var(--amber); }
+
+/* ── Pages ────────────────────────────────────────────────────────────────── */
+.page { display: none; flex: 1; overflow-y: auto; overflow-x: hidden; flex-direction: column; }
+.page.active { display: flex; }
+
+/* ── SCANNER PAGE ─────────────────────────────────────────────────────────── */
+#page-scan {
+  position: relative;
+  background: #000;
+}
+
+/* Camera viewfinder */
+.viewfinder {
+  position: relative;
+  flex: 1;
+  overflow: hidden;
+  background: #000;
+  display: flex; align-items: center; justify-content: center;
+}
+
+#video {
+  width: 100%; height: 100%;
+  object-fit: cover;
+}
+
+#snap-canvas { display: none; }
+
+/* Scan overlay */
+.scan-overlay {
+  position: absolute; inset: 0;
+  pointer-events: none;
+}
+
+/* Corner brackets */
+.bracket {
+  position: absolute;
+  width: 44px; height: 44px;
+}
+.bracket::before, .bracket::after {
+  content: '';
+  position: absolute;
+  background: var(--amber);
+}
+.bracket.tl { top: 20%; left: 8%; }
+.bracket.tl::before { top:0;left:0; width:100%;height:3px; }
+.bracket.tl::after  { top:0;left:0; width:3px;height:100%; }
+.bracket.tr { top: 20%; right: 8%; }
+.bracket.tr::before { top:0;right:0; width:100%;height:3px; }
+.bracket.tr::after  { top:0;right:0; width:3px;height:100%; }
+.bracket.bl { bottom: 20%; left: 8%; }
+.bracket.bl::before { bottom:0;left:0; width:100%;height:3px; }
+.bracket.bl::after  { bottom:0;left:0; width:3px;height:100%; }
+.bracket.br { bottom: 20%; right: 8%; }
+.bracket.br::before { bottom:0;right:0; width:100%;height:3px; }
+.bracket.br::after  { bottom:0;right:0; width:3px;height:100%; }
+
+/* Scanline animation */
+.scanline {
+  position: absolute;
+  left: 8%; right: 8%;
+  top: 20%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--amber), transparent);
+  box-shadow: 0 0 12px var(--amber);
+  animation: scanmove 2.5s ease-in-out infinite;
+  opacity: 0;
+}
+.scanning-active .scanline { opacity: 1; }
+@keyframes scanmove {
+  0%   { top: 20%; }
+  50%  { top: 78%; }
+  100% { top: 20%; }
+}
+
+/* Target zone label */
+.target-label {
+  position: absolute;
+  top: calc(20% - 28px);
+  left: 50%; transform: translateX(-50%);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.62rem; letter-spacing: 3px;
+  color: var(--amber); opacity: 0.7;
+  white-space: nowrap;
+}
+
+/* No camera message */
+.no-cam {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  text-align: center;
+  padding: 40px;
+  flex: 1;
+}
+.no-cam.show { display: flex; }
+.no-cam-icon { font-size: 56px; opacity: 0.3; }
+.no-cam h3 { font-size: 1.3rem; font-weight: 700; color: var(--muted); letter-spacing: 1px; }
+.no-cam p { font-size: 0.9rem; color: var(--muted); line-height: 1.6; font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; }
+
+/* Controls bar */
+.controls {
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  padding: 16px 18px;
+  padding-bottom: calc(16px + var(--safe));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-shrink: 0;
+}
+
+.upload-btn {
+  width: 52px; height: 52px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 22px;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.upload-btn:active { background: var(--border2); transform: scale(0.95); }
+
+/* Main shutter button */
+.shutter {
+  width: 72px; height: 72px;
+  border-radius: 50%;
+  background: var(--amber);
+  border: 4px solid var(--amber2);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s;
+  position: relative;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 6px rgba(240,192,64,0.12);
+}
+.shutter:active { transform: scale(0.93); }
+.shutter.loading {
+  background: var(--border2);
+  border-color: var(--muted2);
+  animation: shutterPulse 1s ease-in-out infinite;
+}
+@keyframes shutterPulse { 0%,100%{box-shadow:0 0 0 6px rgba(240,192,64,0.08)} 50%{box-shadow:0 0 0 12px rgba(240,192,64,0.04)} }
+.shutter-inner {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  background: #080a0d;
+  opacity: 0.3;
+}
+.shutter.loading .shutter-inner { opacity: 0; }
+.shutter-spinner {
+  display: none;
+  width: 28px; height: 28px;
+  border: 3px solid rgba(255,255,255,0.1);
+  border-top-color: var(--text);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  position: absolute;
+}
+.shutter.loading .shutter-spinner { display: block; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.flip-btn {
+  width: 52px; height: 52px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 22px;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.flip-btn:active { background: var(--border2); transform: scale(0.95); }
+
+/* Result toast */
+.result-toast {
+  position: absolute;
+  bottom: 100px;
+  left: 16px; right: 16px;
+  background: rgba(13, 18, 25, 0.97);
+  border: 1px solid var(--border2);
+  border-radius: 16px;
+  padding: 16px 18px;
+  display: none;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+  animation: toastIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes toastIn { from { opacity:0; transform:translateY(20px) scale(0.95); } }
+.result-toast.show { display: block; }
+
+.toast-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem; letter-spacing: 3px; color: var(--muted);
+  text-transform: uppercase; margin-bottom: 10px;
+}
+
+.toast-plate {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.mini-plate {
+  display: flex;
+  align-items: stretch;
+  border-radius: 5px;
+  overflow: hidden;
+  border: 2px solid #222;
+  box-shadow: 0 3px 12px rgba(0,0,0,0.5);
+}
+.mini-eu {
+  background: #003399;
+  width: 22px;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 1px; padding: 4px 2px;
+}
+.mini-stars { color:#FFD700; font-size:5px; line-height:1.3; text-align:center; }
+.mini-cc { color:#FFD700; font-size:7px; font-weight:bold; font-family:'JetBrains Mono',monospace; }
+.mini-num {
+  background: #f5f0e0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.4rem; font-weight: 700;
+  color: #111; letter-spacing: 3px;
+  padding: 6px 12px;
+}
+
+.toast-not-found {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem; color: var(--red);
+  letter-spacing: 2px;
+}
+
+.toast-meta {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem; color: var(--muted);
+  letter-spacing: 1px; line-height: 1.6;
+}
+
+.toast-close {
+  position: absolute; top: 10px; right: 12px;
+  background: none; border: none;
+  color: var(--muted); font-size: 18px; cursor: pointer;
+  line-height: 1;
+}
+
+/* Preview overlay for uploaded image */
+.preview-overlay {
+  position: absolute; inset: 0;
+  display: none;
+  background: #000;
+  z-index: 5;
+}
+.preview-overlay.show { display: flex; align-items: center; justify-content: center; }
+.preview-overlay img {
+  max-width: 100%; max-height: 100%;
+  object-fit: contain;
+}
+.preview-close {
+  position: absolute; top: 12px; right: 12px;
+  width: 36px; height: 36px;
+  background: rgba(0,0,0,0.7);
+  border: 1px solid var(--border2);
+  border-radius: 50%;
+  color: var(--text); font-size: 18px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+}
+
+/* ── HISTORY PAGE ─────────────────────────────────────────────────────────── */
+#page-history {
+  background: var(--bg);
+}
+
+.history-header {
+  padding: 16px 18px 12px;
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.history-title {
+  font-size: 1.1rem; font-weight: 700; letter-spacing: 2px; color: var(--text);
+}
+.clear-btn {
+  background: none; border: 1px solid var(--border);
+  color: var(--muted); font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem; letter-spacing: 1px; padding: 6px 12px;
+  border-radius: 6px; cursor: pointer; transition: all 0.2s;
+}
+.clear-btn:active { background: var(--border); color: var(--red); border-color: var(--red); }
+
+.history-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-bottom: calc(12px + var(--safe));
+}
+
+.history-empty {
+  flex: 1;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 14px; color: var(--muted);
+  padding: 40px;
+}
+.history-empty-icon { font-size: 48px; opacity: 0.2; }
+.history-empty p { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; letter-spacing: 2px; text-align: center; }
+
+.history-item {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  animation: itemIn 0.2s ease;
+}
+@keyframes itemIn { from { opacity:0; transform:translateY(8px); } }
+
+.history-thumb {
+  width: 56px; height: 42px;
+  border-radius: 6px;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: var(--muted2);
+  border: 1px solid var(--border2);
+}
+.history-thumb-placeholder {
+  width: 56px; height: 42px;
+  border-radius: 6px;
+  background: var(--muted2);
+  border: 1px solid var(--border2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; flex-shrink: 0;
+}
+
+.history-info { flex: 1; min-width: 0; }
+
+.history-plate {
+  display: flex; align-items: stretch;
+  border-radius: 4px; overflow: hidden;
+  border: 2px solid #1a1a1a;
+  width: fit-content;
+  margin-bottom: 6px;
+}
+.h-eu {
+  background: #003399; width: 18px;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 1px; padding: 3px 1px;
+}
+.h-stars { color:#FFD700; font-size:4px; line-height:1.3; text-align:center; }
+.h-cc { color:#FFD700; font-size:6px; font-weight:bold; font-family:'JetBrains Mono',monospace; }
+.h-num {
+  background: #f5f0e0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1rem; font-weight: 700;
+  color: #111; letter-spacing: 2px;
+  padding: 4px 10px;
+}
+.history-not-found {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem; color: var(--red); letter-spacing: 1px;
+  margin-bottom: 6px;
+}
+
+.history-time {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.62rem; color: var(--muted); letter-spacing: 1px;
+}
+
+.history-delete {
+  background: none; border: none;
+  color: var(--muted2); font-size: 18px;
+  cursor: pointer; padding: 4px;
+  border-radius: 6px; transition: color 0.2s;
+  flex-shrink: 0;
+}
+.history-delete:active { color: var(--red); }
+
+.ckp-btn {
+  background: none; border: 1px solid var(--border2);
+  color: var(--muted); font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem; letter-spacing: 1px; padding: 5px 8px;
+  border-radius: 6px; cursor: pointer; transition: all 0.2s;
+  white-space: nowrap; flex-shrink: 0;
+}
+.ckp-btn:hover { border-color: var(--amber); color: var(--amber); }
+.ckp-btn:active { background: rgba(240,192,64,0.1); }
+
+/* ── DETAIL MODAL ────────────────────────────────────────────────────────── */
+.detail-backdrop {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.92);
+  z-index: 200;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  backdrop-filter: blur(6px);
+}
+.detail-backdrop.show { display: flex; }
+
+.detail-modal {
+  width: 100%; max-width: 440px;
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 16px;
+  overflow: hidden;
+  animation: detailIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes detailIn { from { opacity:0; transform:scale(0.92); } }
+
+.detail-img-wrap {
+  width: 100%; aspect-ratio: 16/9;
+  background: #000;
+  position: relative;
+  overflow: hidden;
+}
+.detail-img-wrap img {
+  width: 100%; height: 100%;
+  object-fit: contain;
+}
+.detail-img-placeholder {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 56px; opacity: 0.15;
+}
+
+.detail-body { padding: 18px 20px 20px; }
+
+.detail-plate-wrap {
+  display: flex; justify-content: center;
+  margin-bottom: 14px;
+}
+.detail-scene {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem; color: var(--text);
+  letter-spacing: 1px; line-height: 1.7;
+  background: rgba(0,0,0,0.3);
+  border-left: 3px solid var(--border2);
+  padding: 10px 14px; border-radius: 2px;
+  margin-bottom: 14px;
+}
+.detail-time {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.62rem; color: var(--muted);
+  letter-spacing: 1px; margin-bottom: 16px;
+}
+
+.detail-actions {
+  display: flex; gap: 10px;
+}
+.detail-copy-btn {
+  flex: 1;
+  background: var(--amber); color: #080a0d;
+  border: none; border-radius: 10px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.95rem; font-weight: 800;
+  letter-spacing: 2px; padding: 12px;
+  cursor: pointer; transition: opacity 0.2s;
+}
+.detail-copy-btn:active { opacity: 0.8; }
+.detail-close-btn {
+  background: var(--card); color: var(--muted);
+  border: 1px solid var(--border2); border-radius: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem; letter-spacing: 1px;
+  padding: 12px 16px; cursor: pointer; transition: all 0.2s;
+}
+.detail-close-btn:active { background: var(--border); }
+
+/* ── SETTINGS MODAL ───────────────────────────────────────────────────────── */
+.modal-backdrop {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.85);
+  z-index: 100;
+  display: none;
+  align-items: flex-end;
+  backdrop-filter: blur(4px);
+}
+.modal-backdrop.show { display: flex; }
+
+.modal {
+  width: 100%; max-width: 480px;
+  margin: 0 auto;
+  background: var(--surface);
+  border-radius: 20px 20px 0 0;
+  border-top: 1px solid var(--border2);
+  padding: 0 0 calc(20px + var(--safe));
+  animation: slideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes slideUp { from { transform: translateY(100%); } }
+
+.modal-handle {
+  width: 36px; height: 4px;
+  background: var(--border2);
+  border-radius: 2px;
+  margin: 12px auto 0;
+}
+
+.modal-title {
+  font-size: 1.2rem; font-weight: 800;
+  letter-spacing: 2px; padding: 16px 20px 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.modal-body { padding: 16px 20px; display: flex; flex-direction: column; gap: 14px; }
+
+.field-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem; letter-spacing: 3px; color: var(--muted);
+  text-transform: uppercase; display: block; margin-bottom: 8px;
+}
+
+.key-row { display: flex; gap: 8px; }
+
+.key-input {
+  flex: 1;
+  background: var(--bg);
+  border: 1px solid var(--border2);
+  color: var(--text);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem; padding: 12px 14px;
+  border-radius: 10px; outline: none;
+  transition: border-color 0.2s;
+}
+.key-input:focus { border-color: var(--amber); }
+.key-input::placeholder { color: var(--muted); }
+
+.eye-btn {
+  background: var(--card); border: 1px solid var(--border2);
+  color: var(--muted); width: 46px; border-radius: 10px;
+  font-size: 18px; cursor: pointer; transition: all 0.2s;
+  display: flex; align-items: center; justify-content: center;
+}
+.eye-btn:active { background: var(--border); }
+
+.key-hint {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem; color: var(--muted); letter-spacing: 1px;
+  line-height: 1.8;
+}
+.key-hint a { color: var(--amber); text-decoration: none; }
+
+.save-btn {
+  width: 100%;
+  background: var(--amber);
+  color: #080a0d;
+  border: none;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1rem; font-weight: 800;
+  letter-spacing: 3px; padding: 14px;
+  border-radius: 12px; cursor: pointer;
+  transition: opacity 0.2s;
+  margin-top: 4px;
+}
+.save-btn:active { opacity: 0.85; }
+
+.key-status {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem; letter-spacing: 2px;
+  padding: 6px 10px; border-radius: 6px;
+  display: none; text-align: center;
+}
+.key-status.ok { display:block; background:rgba(34,197,94,0.1); color:var(--green); border:1px solid rgba(34,197,94,0.2); }
+.key-status.err { display:block; background:rgba(239,68,68,0.1); color:var(--red); border:1px solid rgba(239,68,68,0.2); }
+
+/* Input file hidden */
+#file-input { display: none; }
+
+/* ── Landscape layout ─────────────────────────────────────────────────────── */
+@media (orientation: landscape) and (max-height: 500px) {
+  /* Hide header and tabs — full screen camera */
+  header, .tabs { display: none; }
+
+  #app {
+    height: 100dvh;
+  }
+
+  #page-scan {
+    flex-direction: row;
+    flex: 1;
+    height: 100dvh;
+  }
+
+  .viewfinder {
+    flex: 1;
+    height: 100dvh;
+  }
+
+  .controls {
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    border-top: none;
+    border-left: 1px solid var(--border);
+    padding: 16px 14px;
+    padding-right: calc(14px + env(safe-area-inset-right, 0px));
+    padding-bottom: calc(16px + var(--safe));
+    width: 88px;
+    height: 100dvh;
+    gap: 16px;
+    flex-shrink: 0;
+  }
+
+  .result-toast {
+    bottom: auto;
+    top: 50%;
+    transform: translateY(-50%);
+    left: 10px;
+    right: 100px;
   }
 }
 
-/* ── MOBILE LAYOUT — always landscape ── */
-@media (max-width: 900px) {
-  #rz1, #rz2 { display:none; }
-  .hint { display:none; }
-
-  /* BROWSE mode — two panels side by side */
-  body.mob-browse #ws { flex-direction: row; }
-  body.mob-browse #lp { width:40% !important; height:100%; min-width:unset;
-        border-right:1px solid var(--c64bord); border-bottom:none; flex-shrink:0; }
-  body.mob-browse #mp { flex:1; height:100%; min-width:unset; }
-  body.mob-browse #rp { display:none; }
-
-  /* PLAY mode — emulator fullscreen */
-  body.mob-play #lp { display:none; }
-  body.mob-play #mp { display:none; }
-  body.mob-play #rp { flex:1; width:100% !important; }
-  body.mob-play #top { display:none; }
-  body.mob-play #bot { display:none; }
-}
-
-/* Back button */
-#mob-back { display:none; }
-@media (max-width:900px) {
-  body.mob-play #mob-back {
-    display:flex; position:fixed; bottom:12px; right:12px; z-index:9999;
-    width:44px; height:44px; border-radius:50%;
-    background:var(--c64dark); border:2px solid var(--c64white);
-    color:var(--c64white); font-family:'Share Tech Mono',monospace;
-    font-size:18px; font-weight:700; align-items:center; justify-content:center;
-    cursor:pointer; box-shadow:0 2px 12px rgba(0,0,0,.6); opacity:0.7;
-  }
-}
-
-/* ── LEFT PANEL — C64 PETSCII style ── */
-#lp {
-  width:340px; min-width:140px; display:flex; flex-direction:column;
-  background:var(--c64bg); overflow:hidden; flex-shrink:0; position:relative;
-}
-#lp::before {
-  content:''; position:absolute; inset:0; pointer-events:none; z-index:5;
-  background:repeating-linear-gradient(
-    0deg, transparent, transparent 3px, var(--scan) 3px, var(--scan) 4px);
-}
-
-/* shared C64 font shorthand */
-.c64f {
-  font-family:'Share Tech Mono',monospace;
-  font-size:16px; line-height:18px; font-weight:700;
-  letter-spacing:.5px; text-transform:uppercase;
-}
-
-
-
-/* drop zone */
-#dz {
-  flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
-  gap:6px; cursor:pointer; color:var(--c64txt);
-  font-family:'Share Tech Mono',monospace; font-size:16px; font-weight:700;
-  letter-spacing:2px; text-transform:uppercase; position:relative; z-index:2;
-}
-#dz:hover, #dz.on { background:rgba(112,112,232,.08); }
-#dz .di { font-size:28px; opacity:.35; margin-bottom:4px; }
-#dz .dt { color:var(--c64white); }
-#dz .ds { font-size:11px; color:var(--c64txt); letter-spacing:1px; }
-
-/* toolbar */
-#tb {
-  height:22px; background:var(--c64dark); border-bottom:1px solid var(--c64bord);
-  display:none; align-items:center; padding:0 4px; gap:3px; flex-shrink:0; z-index:6;
-}
-.tbb {
-  height:16px; padding:0 6px;
-  background:var(--c64bg); border:1px solid var(--c64bord);
-  color:var(--c64txt); font-family:'Share Tech Mono',monospace;
-  font-size:10px; font-weight:700; letter-spacing:1px;
-  text-transform:uppercase; cursor:pointer;
-}
-.tbb:hover { background:var(--c64invbg); color:var(--c64invfg); }
-.tfl {
-  flex:1; height:16px;
-  background:var(--c64dark); border:1px solid var(--c64bord);
-  color:var(--c64white); font-family:'Share Tech Mono',monospace;
-  font-size:12px; font-weight:700; letter-spacing:1px;
-  text-transform:uppercase; padding:0 5px; outline:none;
-}
-.tfl::placeholder { color:var(--c64bord); }
-.tfl:focus { border-color:var(--c64white); }
-
-/* file tree */
-#tw { flex:1; overflow-y:auto; overflow-x:hidden; display:none; position:relative; z-index:2; }
-.tn {
-  display:flex; align-items:center; height:18px;
-  padding-left:4px; padding-right:4px;
-  cursor:pointer; user-select:none; white-space:nowrap;
-}
-.tn:hover { background:rgba(112,112,232,.18); }
-.tn.sel   { background:var(--c64invbg); }
-.tn.sel .nn { color:var(--c64invfg); }
-
-.ntog { width:14px; flex-shrink:0; text-align:center;
-        font-family:'Share Tech Mono',monospace; font-size:14px; font-weight:700;
-        color:var(--c64txt); }
-.nn   { font-family:'Share Tech Mono',monospace; font-size:16px; line-height:18px;
-        font-weight:700; letter-spacing:.5px; text-transform:uppercase;
-        flex:1; overflow:hidden; text-overflow:ellipsis; color:var(--c64txt); }
-.nn.fld { color:var(--c64white); }
-.nn.d64 { color:var(--c64cyan); }
-.nn.fil { color:var(--c64txt); }
-.tn.sel .nn.fld,
-.tn.sel .nn.d64,
-.tn.sel .nn.fil { color:var(--c64invfg); }
-.nsz  { font-family:'Share Tech Mono',monospace; font-size:11px;
-        color:var(--c64bord); flex-shrink:0; margin-left:4px; }
-
-/* footer */
-.pfoot {
-  height:18px; background:var(--c64dark); border-top:1px solid var(--c64bord);
-  display:flex; align-items:center; padding:0 8px; gap:14px;
-  flex-shrink:0; z-index:6;
-  font-family:'Share Tech Mono',monospace; font-size:11px; font-weight:700;
-  color:var(--c64txt); text-transform:uppercase; letter-spacing:1px;
-}
-.pfoot b { color:var(--c64white); font-weight:700; }
-
-#tw::-webkit-scrollbar       { width:6px; }
-#tw::-webkit-scrollbar-track { background:var(--c64dark); }
-#tw::-webkit-scrollbar-thumb { background:var(--c64bord); }
-
-/* ── RESIZERS ── */
-.rz {
-  width:3px; background:var(--c64bord); cursor:col-resize; flex-shrink:0;
-  transition:background .15s;
-}
-.rz:hover, .rz.on { background:var(--c64white); }
-#rz1 { border-left:1px solid var(--c64bord); border-right:1px solid var(--c64bord); }
-#rz2 { border-left:1px solid var(--c64bord); border-right:1px solid var(--c64bord); }
-
-/* ── MIDDLE PANEL — C64 directory ── */
-#mp {
-  width:520px; min-width:200px; display:flex; flex-direction:column;
-  background:var(--c64bg); overflow:hidden; flex-shrink:0; position:relative;
-}
-/* ── RIGHT PANEL — C64 preview ── */
-#rp {
-  flex:1; display:flex; flex-direction:column;
-  background:var(--c64bg); overflow:hidden; position:relative;
-}
-
-/* CRT scanlines on both C64 panels */
-#mp::before, #rp::before {
-  content:''; position:absolute; inset:0; pointer-events:none; z-index:5;
-  background:repeating-linear-gradient(
-    0deg, transparent, transparent 3px, var(--scan) 3px, var(--scan) 4px);
-}
-#mp::after, #rp::after {
-  content:''; position:absolute; inset:0; pointer-events:none; z-index:4;
-  background:radial-gradient(ellipse 90% 80% at 50% 44%,
-    rgba(60,60,200,.04) 0%, rgba(0,0,18,.18) 100%);
-}
-
-.c64hdr {
-  height:18px; background:var(--c64dark); color:var(--c64white);
-  display:flex; align-items:center; padding:0 8px; gap:8px;
-  border-bottom:1px solid var(--c64bord); flex-shrink:0; z-index:6;
-  font-family:'Share Tech Mono',monospace; text-transform:uppercase;
-  letter-spacing:1px; font-size:12px; font-weight:700;
-}
-.c64hdr-t { flex:1; color:var(--c64white); }
-.c64hdr-s { font-size:10px; color:var(--c64txt); letter-spacing:1px; }
-
-/* Directory listing */
-#c64s {
-  flex:1; overflow-y:auto; overflow-x:hidden;
-  padding:18px 22px 24px;
-  position:relative; z-index:2;
-  font-family:'Share Tech Mono',monospace;
-  font-size:20px; line-height:20px; font-weight:700;
-  letter-spacing:.5px; color:var(--c64txt);
-  text-transform:uppercase; white-space:pre;
-}
-#c64e {
-  height:100%; display:flex; flex-direction:column;
-  align-items:center; justify-content:center; gap:14px;
-  color:rgba(55,55,175,.4); font-size:12px; letter-spacing:3px;
-  pointer-events:none;
-}
-.c64e-ico { font-size:40px; opacity:.28; }
-
-/* Directory lines */
-.dl { display:block; line-height:20px; white-space:pre; cursor:default; }
-.dl.entry { cursor:pointer; }
-.dl.entry:hover { background:rgba(200,200,255,.1); }
-.dl.entry.copied { background:rgba(56,208,128,.15); }
-.rv     { background:var(--c64invbg); color:var(--c64invfg); }
-.d-blk  { color:var(--c64white); display:inline-block; }
-.d-fn   { color:var(--c64white); }
-.d-id   { color:var(--c64white); }
-.t-prg  { color:var(--c64cyan);  }
-.t-seq  { color:var(--c64green); }
-.t-rel  { color:var(--c64yel);   }
-.t-usr  { color:var(--c64mag);   }
-.t-dir  { color:var(--c64yel);   }
-.t-del  { color:rgba(180,180,255,.18); }
-.t-cbm  { color:var(--c64mag);   }
-.t-nc   { color:var(--c64red);   }
-.t-lk   { color:var(--c64yel);   }
-.d-free { color:var(--c64white); }
-.cur    { display:inline-block; width:12px; height:18px;
-          background:var(--c64txt); vertical-align:text-bottom;
-          animation:blink 1s step-end infinite; }
-@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
-
-.c64foot {
-  height:22px; background:var(--c64dark); border-top:1px solid var(--c64bord);
-  display:flex; align-items:center; padding:0 12px; gap:18px;
-  flex-shrink:0; z-index:6;
-  font-family:'Share Tech Mono',monospace; font-size:11px;
-  color:var(--c64txt); text-transform:uppercase; letter-spacing:1px;
-}
-.c64foot b { color:var(--c64white); font-weight:normal; }
-
-#c64s::-webkit-scrollbar       { width:7px; }
-#c64s::-webkit-scrollbar-track { background:var(--c64dark); }
-#c64s::-webkit-scrollbar-thumb { background:var(--c64bord); }
-
-/* Preview panel */
-#prev-body {
-  flex:1; overflow:hidden; padding:0;
-  background:var(--c64bg); position:relative; z-index:2;
-}
-#prev-empty {
-  display:flex; flex-direction:column; align-items:center; justify-content:center;
-  gap:12px; color:rgba(60,60,175,.4);
-  font-family:'Share Tech Mono',monospace; font-size:11px;
-  letter-spacing:3px; text-transform:uppercase; width:100%; flex:1;
-}
-#emu-placeholder {
-  position:absolute; inset:0;
-  display:flex; flex-direction:column; align-items:center; justify-content:center;
-  gap:12px; color:rgba(60,60,175,.4);
-  font-family:'Share Tech Mono',monospace; font-size:11px;
-  letter-spacing:3px; text-transform:uppercase;
-  background:var(--c64bg);
-}
-/* EmulatorJS iframe */
-#emu-frame {
-  position:absolute; inset:0;
-  width:100% !important; height:100% !important;
-  border:none;
-}
-#prev-canvas {
-  image-rendering:pixelated; image-rendering:crisp-edges;
-  display:none; border:2px solid var(--c64bord);
-}
-.prev-info {
-  position:absolute; bottom:6px; right:10px;
-  font-family:'Share Tech Mono',monospace; font-size:10px;
-  color:rgba(80,80,180,.45); letter-spacing:1px; text-transform:uppercase;
-  z-index:3;
-}
-
-/* ── BOTTOM BAR ── */
-#bot {
-  height:20px; background:var(--c64dark); border-top:1px solid var(--c64bord);
-  display:flex; align-items:center; padding:0 10px; gap:16px; flex-shrink:0;
-}
-.bk  { font-family:'Share Tech Mono',monospace; font-size:10px; font-weight:700;
-       background:var(--c64invbg); color:var(--c64invfg);
-       padding:0 4px; margin-right:3px; letter-spacing:1px; }
-.bl  { font-family:'Share Tech Mono',monospace; font-size:10px; font-weight:700;
-       color:var(--c64txt); letter-spacing:1px; text-transform:uppercase; }
-.bsp { flex:1; }
-#st  { font-family:'Share Tech Mono',monospace; font-size:10px; font-weight:700;
-       color:var(--c64txt); letter-spacing:1px; text-transform:uppercase; }
-
-/* ── COPY TOAST ── */
-#toast {
-  position:fixed; bottom:40px; left:50%;
-  transform:translateX(-50%) translateY(16px);
-  background:var(--c64dark); border:1px solid var(--c64white); color:var(--c64white);
-  font-family:'Share Tech Mono',monospace; font-size:11px;
-  letter-spacing:2px; text-transform:uppercase;
-  padding:7px 18px; border-radius:4px;
-  opacity:0; transition:opacity .25s, transform .25s;
-  z-index:999; pointer-events:none; max-width:80vw;
-  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-}
-#toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+/* Scrollbar */
+::-webkit-scrollbar { width: 3px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
 </style>
 </head>
 <body>
 
-<div id="top">
-  <div class="logo"><span class="star">&#x2605;</span>&#x20;C64 DISK MANAGER&#x20;<span class="star">&#x2605;</span></div>
-  <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--c64bord);letter-spacing:1px">V1.9</span>
-  <span class="hint">LOAD FOLDER &#x2192; SELECT .D64 &#x2192; CLICK FILE TO RUN</span>
-  <span id="clk"></span>
-</div>
-<div id="mob-back" title="BACK">&#x2B05;</div>
+<div id="app">
+  <!-- Header -->
+  <header>
+    <div class="logo">
+      <div class="logo-icon">SPZ</div>
+      <div class="logo-text">SCAN<span>NER</span></div>
+    </div>
+    <div class="settings-btn" id="settingsBtn">⚙</div>
+  </header>
 
-<div id="ws">
-
-  <!-- PANEL 1: PC file tree — C64 PETSCII style -->
-  <div id="lp">
-    <div id="dz">
-      <div class="di">&#x1F4BE;</div>
-      <div class="dt">LOAD FOLDER</div>
-      <div class="ds">DRAG OR CLICK</div>
-      <div class="ds" style="font-size:11px;margin-top:2px;color:var(--c64bord)">SCANS ALL .D64 FILES</div>
-    </div>
-    <div id="tb">
-      <button class="tbb" id="btnR">NEW</button>
-      <button class="tbb" id="btnC">CLR</button>
-      <button class="tbb" id="btnE">EXP</button>
-      <input class="tfl" id="tflt" placeholder="SEARCH...">
-    </div>
-    <div id="tw"><div id="tree"></div></div>
-    <div class="pfoot">
-      <span>DIR:<b id="pf">0</b></span>
-      <span>D64:<b id="pd">0</b></span>
-      <span>FILE:<b id="px">0</b></span>
-      <span style="flex:1"></span>
-      <span style="color:var(--c64bord)" id="pcpath"></span>
-    </div>
+  <!-- Tabs -->
+  <div class="tabs">
+    <div class="tab active" data-tab="scan">📷 KAMERA</div>
+    <div class="tab" data-tab="history">🕐 HISTORIE</div>
   </div>
 
-  <div class="rz" id="rz1"></div>
+  <!-- ── SCAN PAGE ── -->
+  <div class="page active" id="page-scan">
+    <!-- Viewfinder -->
+    <div class="viewfinder" id="viewfinder">
+      <video id="video" autoplay playsinline muted></video>
+      <canvas id="snap-canvas"></canvas>
 
-  <!-- PANEL 2: C64 directory -->
-  <div id="mp">
-    <div class="c64hdr">
-      <span class="c64hdr-t" id="c64title">*** C64 DISK DIRECTORY ***</span>
-      <span class="c64hdr-s" id="c64sub">SELECT .D64 FROM LEFT</span>
-    </div>
-    <div id="c64s">
-      <div id="c64e">
-        <span class="c64e-ico">💾</span>
-        <span>VYBERTE .D64 SOUBOR</span>
-        <span style="font-size:10px;opacity:.5">KLIKNI NA DISKETU V LEVEM PANELU</span>
+      <!-- Scan overlay -->
+      <div class="scan-overlay" id="scanOverlay">
+        <div class="bracket tl"></div>
+        <div class="bracket tr"></div>
+        <div class="bracket bl"></div>
+        <div class="bracket br"></div>
+        <div class="scanline" id="scanline"></div>
+        <div class="target-label">▸ ZAMĚŘTE SPZ DO RÁMEČKU ◂</div>
+      </div>
+
+      <!-- No camera fallback -->
+      <div class="no-cam" id="noCam">
+        <div class="no-cam-icon">📷</div>
+        <h3>KAMERA NEDOSTUPNÁ</h3>
+        <p>Použijte tlačítko galerie<br>pro nahrání fotografie</p>
+      </div>
+
+      <!-- Preview overlay for uploaded images -->
+      <div class="preview-overlay" id="previewOverlay">
+        <img id="previewImg" alt="">
+        <button class="preview-close" id="previewClose">✕</button>
+      </div>
+
+      <!-- Result toast -->
+      <div class="result-toast" id="resultToast">
+        <button class="toast-close" id="toastClose">✕</button>
+        <div class="toast-label" id="toastLabel">▸ SPZ ROZPOZNÁNA</div>
+        <div class="toast-plate" id="toastPlate"></div>
+        <div class="toast-meta" id="toastMeta"></div>
       </div>
     </div>
-    <div class="c64foot" id="c64foot" style="display:none">
-      <span>SOUBORŮ: <b id="fc">0</b></span>
-      <span>PRG: <b id="fp">0</b></span>
-      <span>VOLNO: <b id="ff">0</b> BLK</span>
-      <span style="flex:1"></span>
-      <span>ID: <b id="fid">—</b></span>
-    </div>
-  </div>
 
-  <div class="rz" id="rz2"></div>
-
-  <!-- PANEL 3: C64 emulator (EmulatorJS / vice_x64sc) -->
-  <div id="rp">
-    <div class="c64hdr">
-      <span class="c64hdr-t" id="prevtitle">*** VICE X64SC EMULATOR ***</span>
-      <span class="c64hdr-s" id="prevsub">CLICK FILE TO RUN</span>
-    </div>
-    <div id="prev-body">
-      <div id="emu-placeholder">
-        <span style="font-size:36px;opacity:.25">🕹️</span>
-        <span>KLIKNI NA SOUBOR V ADRESÁŘI</span>
-        <span style="font-size:10px;opacity:.4">SPUSTÍ VICE X64SC (EmulatorJS)</span>
-        <span style="font-size:9px;opacity:.25;margin-top:8px">vyžaduje internet · cdn.emulatorjs.org</span>
+    <!-- Controls -->
+    <div class="controls">
+      <div class="upload-btn" id="uploadBtn" title="Nahrát z galerie">🖼</div>
+      <div class="shutter" id="shutter">
+        <div class="shutter-inner"></div>
+        <div class="shutter-spinner"></div>
       </div>
-      <!-- EmulatorJS se načte do tohoto iframe -->
-      <iframe id="emu-frame" style="display:none;width:100%;height:100%;border:none;"></iframe>
-      <div class="prev-info" id="prev-info"></div>
+      <div class="flip-btn" id="flipBtn" title="Přepnout kameru">🔄</div>
     </div>
   </div>
 
+  <!-- ── HISTORY PAGE ── -->
+  <div class="page" id="page-history">
+    <div class="history-header">
+      <div class="history-title">HISTORIE SKENŮ</div>
+      <button class="clear-btn" id="clearHistoryBtn">SMAZAT VŠE</button>
+    </div>
+    <div class="history-list" id="historyList"></div>
+  </div>
 </div>
 
-<div id="bot">
-  <span><span class="bk">RET</span><span class="bl">RUN IN EMULATOR</span></span>
-  <span><span class="bk">F5</span><span class="bl">LOAD FOLDER</span></span>
-  <span class="bsp"></span>
-  <span id="st">READY.</span>
+<!-- Detail Modal -->
+<div class="detail-backdrop" id="detailModal">
+  <div class="detail-modal">
+    <div class="detail-img-wrap" id="detailImgWrap"></div>
+    <div class="detail-body">
+      <div class="detail-plate-wrap" id="detailPlateWrap"></div>
+      <div class="detail-scene" id="detailScene"></div>
+      <div class="detail-time" id="detailTime"></div>
+      <div class="detail-actions">
+        <button class="detail-copy-btn" id="detailCopyBtn">📋 ZKOPÍROVAT</button>
+        <button class="detail-close-btn" id="detailCloseBtn">ZAVŘÍT</button>
+      </div>
+    </div>
+  </div>
 </div>
 
-<div id="toast"></div>
+<!-- Settings Modal -->
+<div class="modal-backdrop" id="settingsModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">NASTAVENÍ</div>
+    <div class="modal-body">
+      <div>
+        <span class="field-label">Claude API klíč</span>
+        <div class="key-row">
+          <input type="password" class="key-input" id="keyInput" placeholder="sk-ant-api03-..." autocomplete="off" spellcheck="false">
+          <button class="eye-btn" id="eyeBtn">👁</button>
+          <button class="eye-btn" id="keyFileBtn" title="Načíst ze souboru .txt">📄</button>
+        </div>
+      </div>
+      <div class="key-status" id="keyStatus"></div>
+      <div class="key-hint">
+        Klíč získáš na <a href="https://console.anthropic.com/settings/keys" target="_blank">console.anthropic.com</a><br>
+        Uložen pouze v tomto prohlížeči · nikam se neposílá
+      </div>
+      <button class="save-btn" id="saveKeyBtn">ULOŽIT</button>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="file-input" accept="image/*" capture="environment">
+<input type="file" id="key-file-input" accept=".txt">
 
 <script>
-'use strict';
+// ── State ──────────────────────────────────────────────────────────────────
+let stream = null;
+let facingMode = 'environment';
+let isAnalyzing = false;
+let history = JSON.parse(localStorage.getItem('spz_history') || '[]');
+let apiKey = localStorage.getItem('spz_apikey') || '';
+let currentImageB64 = null;
+let currentMime = 'image/jpeg';
+let usingUploadedImage = false;
 
-// ══ D64 PARSER ═══════════════════════════════════════════════
-// Track sector counts (tracks 1-35)
-const TSEC = [0,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,
-              19,19,19,19,19,19,19,18,18,18,18,18,18,17,17,17,17,17];
+// ── DOM refs ───────────────────────────────────────────────────────────────
+const video         = document.getElementById('video');
+const snapCanvas    = document.getElementById('snap-canvas');
+const shutter       = document.getElementById('shutter');
+const uploadBtn     = document.getElementById('uploadBtn');
+const flipBtn       = document.getElementById('flipBtn');
+const fileInput     = document.getElementById('file-input');
+const scanOverlay   = document.getElementById('scanOverlay');
+const noCam         = document.getElementById('noCam');
+const resultToast   = document.getElementById('resultToast');
+const toastClose    = document.getElementById('toastClose');
+const toastLabel    = document.getElementById('toastLabel');
+const toastPlate    = document.getElementById('toastPlate');
+const toastMeta     = document.getElementById('toastMeta');
+const historyList   = document.getElementById('historyList');
+const settingsBtn   = document.getElementById('settingsBtn');
+const settingsModal = document.getElementById('settingsModal');
+const keyInput      = document.getElementById('keyInput');
+const eyeBtn        = document.getElementById('eyeBtn');
+const saveKeyBtn    = document.getElementById('saveKeyBtn');
+const keyStatus     = document.getElementById('keyStatus');
+const clearHistBtn  = document.getElementById('clearHistoryBtn');
+const previewOverlay = document.getElementById('previewOverlay');
+const previewImg    = document.getElementById('previewImg');
+const previewClose  = document.getElementById('previewClose');
 
-function secOffset(t, s) {
-  let o = 0;
-  for (let i = 1; i < t; i++) o += (TSEC[i] || 17) * 256;
-  return o + s * 256;
-}
-// PETSCII byte → display char (uppercase screen mode)
-// PETSCII layout (C64 unshifted mode):
-//   $20-$3F  : same as ASCII (space, !"#$%&'()*+,-./ 0-9 :;<=>?)
-//   $40       : @ sign
-//   $41-$5A  : A-Z (unshifted letters — PETSCII "lowercase" stored here)
-//   $5B       : [ 
-//   $5C       : £ (pound sign)
-//   $5D       : ]
-//   $5E       : ↑ (up arrow)
-//   $5F       : ← (left arrow)
-//   $60-$7F  : graphic chars (copies of $C0-$DF in display)
-//   $A0       : shift-space (non-breaking space, display as space)
-//   $A1-$BF  : graphic chars
-//   $C0       : graphic
-//   $C1-$DA  : A-Z (shifted uppercase letters)
-//   $DB-$DF  : graphic chars
-//   $E0-$FE  : copies of $A0-$BE
-//   $FF       : π (pi)
-function petDisplay(b) {
-  if (b === 0xA0 || b === 0x60) return ' ';  // shift-space
-  if (b >= 0x20 && b <= 0x5F) return String.fromCharCode(b); // $20-$5F: direct ASCII match incl. @A-Z[\]^_
-  if (b >= 0xC1 && b <= 0xDA) return String.fromCharCode(b - 0x80); // $C1-$DA → A-Z (shifted)
-  if (b >= 0x61 && b <= 0x7F) return String.fromCharCode(b - 0x20); // $61-$7F → mirrors of $C1-$DF (graphics, show as caps)
-  if (b === 0xFF) return '\u03C0'; // pi
-  // $A0-$BF, $DB-$FE: C64 graphic chars — show as unicode approximations
-  const gfx = {
-    0xA1:'\u2660', 0xA2:'\u258C', 0xA3:'\u2014', 0xA4:'',
-    0xA5:'', 0xA6:'\u258E', 0xA7:'\u258A', 0xA8:'',
-    0xA9:'', 0xAA:'\u25CB', 0xAB:'\u2020', 0xAC:'\u2665',
-    0xAE:'\u256E', 0xAF:'\u2570', 0xB0:'\u256F', 0xB1:'\u2572',
-    0xB2:'\u2571', 0xB3:'\u25CF', 0xB4:'\u2666', 0xB5:'\u256D',
-    0xB6:'\u2573', 0xB7:'\u25C6', 0xB8:'\u2663', 0xB9:'\u2501',
-    0xBA:'\u03C0', 0xBB:'\u25E5', 0xBC:'\u2022',
-  };
-  return gfx[b] || '\u00B7';
-}
-
-// PETSCII byte → string for VICE -autostart filename
-// VICE receives the filename and compares against PETSCII on disk.
-// Rule: send the byte as-is if printable ASCII, lowercase for $41-$5A,
-// uppercase for $C1-$DA, literal char for $5B-$5F.
-function petVice(b) {
-  if (b === 0xA0) return ' ';
-  if (b >= 0x20 && b <= 0x40) return String.fromCharCode(b);         // space, punct, digits, @
-  if (b >= 0x41 && b <= 0x5A) return String.fromCharCode(b + 0x20);  // $41-$5A → a-z
-  if (b >= 0x5B && b <= 0x5F) return String.fromCharCode(b);         // [ \ ] ^ _  (keep as-is)
-  if (b >= 0xC1 && b <= 0xDA) return String.fromCharCode(b - 0x80);  // $C1-$DA → A-Z
-  if (b >= 0x61 && b <= 0x7F) return String.fromCharCode(b - 0x20);  // mirrors → A-Z
-  return '';
-}
-
-function readPet(d, off, len) {
-  // Returns { display, vice }
-  // Filenames on C64 disks are stored in PETSCII.
-  // However some old mastering tools stored screencodes instead.
-  // Screencodes $00-$1F map to PETSCII $40-$5F (add $40).
-  // We detect this: if a byte is < $20 and not $00/$A0, treat as screencode.
-  let display = '', vice = '';
-  for (let i = 0; i < len; i++) {
-    let b = d[off + i];
-    if (b === 0xA0 || b === 0x00) break;
-    // Screencode range $01-$1F: convert to PETSCII by adding $40
-    if (b >= 0x01 && b <= 0x1F) b = b + 0x40;
-    display += petDisplay(b);
-    vice    += petVice(b);
-  }
-  return { display: display || '?', vice: vice || '' };
-}
-const FTYPES = ['DEL','SEQ','PRG','USR','REL','CBM','DIR','???'];
-
-function parseD64(buf) {
-  const d = new Uint8Array(buf);
-  const bam = secOffset(18, 0);
-  const diskName = readPet(d, bam + 0x90, 16).display || 'UNNAMED';
-  let diskId = '';
-  for (let i = 0; i < 2; i++) {
-    const b = d[bam + 0xA0 + i];
-    diskId += (b === 0xA0 || b === 0) ? ' ' : petDisplay(b);
-  }
-  let free = 0;
-  for (let t = 1; t <= 35; t++) {
-    if (t === 18) continue;
-    const idx = bam + 4 + (t - 1) * 4;
-    if (idx < d.length) free += d[idx];
-  }
-  const entries = [];
-  let tr = 18, se = 1;
-  const seen = new Set();
-  while (tr !== 0) {
-    const key = `${tr}:${se}`;
-    if (seen.has(key)) break;
-    seen.add(key);
-    const ms = TSEC[tr] || 17;
-    if (tr > 40 || se >= ms) break;
-    const so = secOffset(tr, se);
-    if (so + 256 > d.length) break;
-    for (let e = 0; e < 8; e++) {
-      const eo = so + e * 32;
-      const ft = d[eo + 2];
-      if (ft === 0x00) continue;
-      const rt     = ft & 0x07;
-      const closed = !!(ft & 0x80);
-      const locked = !!(ft & 0x40);
-      const fnPet  = readPet(d, eo + 0x05, 16);
-      const fn     = fnPet.display || '?';
-      const fnVice = fnPet.vice;
-      const blocks = d[eo + 0x1E] | (d[eo + 0x1F] << 8);
-      entries.push({ filename: fn, fnVice: fnVice, type: FTYPES[rt] || '???',
-                     rt, closed, locked, blocks,
-                     startTrack: d[eo + 0x03], startSec: d[eo + 0x04] });
-    }
-    const nt = d[so], ns = d[so + 1];
-    if (nt === 0) break;
-    tr = nt; se = ns;
-  }
-  return { diskName, diskId, free, entries, data: d };
-}
-
-// ══ C64 CHARSET (uppercase ROM, 128 chars × 8 bytes) ═════════
-const C64_CHARSET = new Uint8Array([
-  0x3C,0x66,0x6E,0x6E,0x60,0x62,0x3C,0x00, // @
-  0x18,0x3C,0x66,0x7E,0x66,0x66,0x66,0x00, // A
-  0x7C,0x66,0x66,0x7C,0x66,0x66,0x7C,0x00, // B
-  0x3C,0x66,0x60,0x60,0x60,0x66,0x3C,0x00, // C
-  0x78,0x6C,0x66,0x66,0x66,0x6C,0x78,0x00, // D
-  0x7E,0x60,0x60,0x78,0x60,0x60,0x7E,0x00, // E
-  0x7E,0x60,0x60,0x78,0x60,0x60,0x60,0x00, // F
-  0x3C,0x66,0x60,0x6E,0x66,0x66,0x3C,0x00, // G
-  0x66,0x66,0x66,0x7E,0x66,0x66,0x66,0x00, // H
-  0x3C,0x18,0x18,0x18,0x18,0x18,0x3C,0x00, // I
-  0x1E,0x0C,0x0C,0x0C,0x0C,0x6C,0x38,0x00, // J
-  0x66,0x6C,0x78,0x70,0x78,0x6C,0x66,0x00, // K
-  0x60,0x60,0x60,0x60,0x60,0x60,0x7E,0x00, // L
-  0x63,0x77,0x7F,0x6B,0x63,0x63,0x63,0x00, // M
-  0x66,0x76,0x7E,0x7E,0x6E,0x66,0x66,0x00, // N
-  0x3C,0x66,0x66,0x66,0x66,0x66,0x3C,0x00, // O
-  0x7C,0x66,0x66,0x7C,0x60,0x60,0x60,0x00, // P
-  0x3C,0x66,0x66,0x66,0x66,0x3C,0x0E,0x00, // Q
-  0x7C,0x66,0x66,0x7C,0x78,0x6C,0x66,0x00, // R
-  0x3C,0x66,0x60,0x3C,0x06,0x66,0x3C,0x00, // S
-  0x7E,0x18,0x18,0x18,0x18,0x18,0x18,0x00, // T
-  0x66,0x66,0x66,0x66,0x66,0x66,0x3C,0x00, // U
-  0x66,0x66,0x66,0x66,0x66,0x3C,0x18,0x00, // V
-  0x63,0x63,0x63,0x6B,0x7F,0x77,0x63,0x00, // W
-  0x66,0x66,0x3C,0x18,0x3C,0x66,0x66,0x00, // X
-  0x66,0x66,0x66,0x3C,0x18,0x18,0x18,0x00, // Y
-  0x7E,0x06,0x0C,0x18,0x30,0x60,0x7E,0x00, // Z
-  0x3C,0x30,0x30,0x30,0x30,0x30,0x3C,0x00, // [
-  0x18,0x3C,0x66,0x7E,0x66,0x66,0x66,0x00, // £
-  0x3C,0x0C,0x0C,0x0C,0x0C,0x0C,0x3C,0x00, // ]
-  0x18,0x3C,0x66,0x66,0x00,0x00,0x00,0x00, // ^
-  0x00,0x00,0x00,0x00,0x00,0x00,0x7E,0x00, // _
-  0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00, // space
-  0x18,0x18,0x18,0x18,0x00,0x00,0x18,0x00, // !
-  0x66,0x66,0x66,0x00,0x00,0x00,0x00,0x00, // "
-  0x66,0x66,0xFF,0x66,0xFF,0x66,0x66,0x00, // #
-  0x18,0x3E,0x60,0x3C,0x06,0x7C,0x18,0x00, // $
-  0x62,0x66,0x0C,0x18,0x30,0x66,0x46,0x00, // %
-  0x3C,0x66,0x3C,0x38,0x67,0x66,0x3F,0x00, // &
-  0x06,0x0C,0x18,0x00,0x00,0x00,0x00,0x00, // '
-  0x0C,0x18,0x30,0x30,0x30,0x18,0x0C,0x00, // (
-  0x30,0x18,0x0C,0x0C,0x0C,0x18,0x30,0x00, // )
-  0x00,0x66,0x3C,0xFF,0x3C,0x66,0x00,0x00, // *
-  0x00,0x18,0x18,0x7E,0x18,0x18,0x00,0x00, // +
-  0x00,0x00,0x00,0x00,0x00,0x18,0x18,0x30, // ,
-  0x00,0x00,0x00,0x7E,0x00,0x00,0x00,0x00, // -
-  0x00,0x00,0x00,0x00,0x00,0x18,0x18,0x00, // .
-  0x00,0x06,0x0C,0x18,0x30,0x60,0x00,0x00, // /
-  0x3C,0x66,0x6E,0x76,0x66,0x66,0x3C,0x00, // 0
-  0x18,0x38,0x18,0x18,0x18,0x18,0x7E,0x00, // 1
-  0x3C,0x66,0x06,0x0C,0x30,0x60,0x7E,0x00, // 2
-  0x3C,0x66,0x06,0x1C,0x06,0x66,0x3C,0x00, // 3
-  0x06,0x0E,0x1E,0x66,0x7F,0x06,0x06,0x00, // 4
-  0x7E,0x60,0x7C,0x06,0x06,0x66,0x3C,0x00, // 5
-  0x3C,0x66,0x60,0x7C,0x66,0x66,0x3C,0x00, // 6
-  0x7E,0x66,0x0C,0x18,0x18,0x18,0x18,0x00, // 7
-  0x3C,0x66,0x66,0x3C,0x66,0x66,0x3C,0x00, // 8
-  0x3C,0x66,0x66,0x3E,0x06,0x66,0x3C,0x00, // 9
-  0x00,0x00,0x18,0x00,0x00,0x18,0x00,0x00, // :
-  0x00,0x00,0x18,0x00,0x00,0x18,0x18,0x30, // ;
-  0x0E,0x18,0x30,0x60,0x30,0x18,0x0E,0x00, // <
-  0x00,0x00,0x7E,0x00,0x7E,0x00,0x00,0x00, // =
-  0x70,0x18,0x0C,0x06,0x0C,0x18,0x70,0x00, // >
-  0x3C,0x66,0x06,0x0C,0x18,0x00,0x18,0x00, // ?
-  // 0x40-0x7F: block/graphic chars (simplified)
-  0xFF,0x00,0x00,0x00,0x00,0x00,0x00,0x00, // horiz top
-  0xF0,0xF0,0xF0,0xF0,0xF0,0xF0,0xF0,0xF0, // left half
-  0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,0x0F, // right half
-  0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xFF, // horiz bot
-  0x00,0x00,0x00,0x00,0xFF,0xC0,0xC0,0xC0,
-  0xC0,0xC0,0xC0,0xFF,0x00,0x00,0x00,0x00,
-  0x00,0x7E,0x5A,0x18,0x18,0x18,0x18,0x00, // pi
-  0x18,0x18,0x18,0x18,0x18,0x18,0x18,0x18, // vert line
-  0xFF,0xFF,0x00,0x00,0x00,0x00,0x00,0x00,
-  0x00,0x00,0x00,0x00,0xFF,0xFF,0xC0,0xC0,
-  0xC0,0xC0,0xFF,0xFF,0x00,0x00,0x00,0x00,
-  0xAA,0x55,0xAA,0x55,0xAA,0x55,0xAA,0x55, // checkerboard
-  0x00,0x00,0x00,0x00,0x0F,0x0F,0x0F,0xFF,
-  0xFF,0x0F,0x0F,0x0F,0x0F,0x00,0x00,0x00,
-  0x18,0x18,0x18,0xFF,0x18,0x18,0x18,0x18,
-  0x18,0x18,0xFF,0xFF,0xFF,0x18,0x18,0x18,
-  0x00,0x00,0x00,0x00,0xF0,0xF0,0xF0,0xF0,
-  0xF0,0xF0,0xF0,0xF0,0x00,0x00,0x00,0x00,
-  0x33,0x33,0xCC,0xCC,0x33,0x33,0xCC,0xCC,
-  0x00,0x00,0xFF,0xFF,0x00,0x00,0xFF,0xFF,
-  0xF0,0xF0,0xF0,0xFF,0x00,0x00,0x00,0x00,
-  0x00,0x00,0x00,0xFF,0x0F,0x0F,0x0F,0x0F,
-  0x00,0x00,0x0F,0x0F,0xFF,0xFF,0x00,0x00,
-  0x00,0x00,0xF0,0xF0,0xFF,0xFF,0x00,0x00,
-  0xFF,0xF0,0xF0,0xF0,0xF0,0xF0,0xF0,0xF0,
-  0xFF,0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,
-  0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,0xFF,
-  0xF0,0xF0,0xF0,0xF0,0xF0,0xF0,0xF0,0xFF,
-  0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF, // solid block
-  0x00,0x00,0x00,0x00,0x00,0x00,0xFF,0xFF,
-  0xFF,0xFF,0x00,0x00,0x00,0x00,0x00,0x00,
-  0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00, // space2
-]);
-
-function charBits(sc) {
-  const inv = sc >= 128;
-  const idx = (sc & 0x7F) % 128;
-  const bits = new Uint8Array(8);
-  for (let r = 0; r < 8; r++)
-    bits[r] = inv ? (~C64_CHARSET[idx*8+r]) & 0xFF : C64_CHARSET[idx*8+r];
-  return bits;
-}
-
-// ══ PREVIEW RENDERER ═════════════════════════════════════════
-let curDisk = null; // parsed D64 info incl. .data
-
-function readFileData(entry) {
-  if (!curDisk) return null;
-  const d = curDisk.data;
-  let tr = entry.startTrack, se = entry.startSec;
-  const out = [];
-  const seen = new Set();
-  let limit = 0;
-  while (tr !== 0 && limit++ < 400) {
-    const key = `${tr}:${se}`;
-    if (seen.has(key) || tr > 40) break;
-    seen.add(key);
-    const off = secOffset(tr, se);
-    if (off + 256 > d.length) break;
-    const nt = d[off], ns = d[off+1];
-    const last = nt === 0;
-    const end = last ? ns : 256;
-    for (let i = 2; i < end; i++) out.push(d[off+i]);
-    if (last) break;
-    tr = nt; se = ns;
-  }
-  return new Uint8Array(out);
-}
-
-// Convert Uint8Array to base64
-function toBase64(bytes) {
-  let bin = '';
-  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
-  return btoa(bin);
-}
-
-// ══ EMULATORJS / VICE_X64SC ══════════════════════════════════
-// EmulatorJS wraps libretro vice_x64sc compiled to WASM.
-// We pass the entire D64 image as a Blob URL → EJS_gameUrl.
-// The emulator runs inside a srcdoc iframe so it shares the
-// same origin and can load CDN scripts without CORS issues.
-//
-// SharedArrayBuffer (threads) requires COOP/COEP headers —
-// not available on file://, so we use single-threaded mode.
-
-let emuBlobUrl  = null;
-let emuBlobUrl2 = null;
-
-function buildSrcdoc(gameUrl, gameName) {
-  // Use JSON.stringify for all values injected into JS — 100% safe escaping
-  var js = [
-    'window.EJS_player        = ' + JSON.stringify('#game') + ';',
-    'window.EJS_core          = ' + JSON.stringify('vice_x64sc') + ';',
-    'window.EJS_gameUrl       = ' + JSON.stringify(gameUrl) + ';',
-    'window.EJS_gameName      = ' + JSON.stringify(gameName) + ';',
-    'window.EJS_pathtodata    = ' + JSON.stringify('https://cdn.emulatorjs.org/stable/data/') + ';',
-    'window.EJS_startOnLoaded = true;',
-    'window.EJS_coreSettings  = {"vice_keyboard_passthrough":"enabled"};',
-    'window.EJS_language      = "en-US";',
-    'window.EJS_backgroundColor = "#000000";',
-    'window.EJS_color         = "#3535c0";',
-    'window.EJS_AdUrl         = "";',
-    'window.EJS_Buttons       = {playPause:false,restart:true,mute:true,' +
-      'settings:true,fullscreen:true,saveState:true,loadState:true,' +
-      'screenRecord:false,gamepad:true,cheat:false,volume:true};',
-  ].join('\n');
-
-  var onStartJs = [
-    'window.EJS_onGameStart = function() {',
-    '  var tries = 0;',
-    '  var iv = setInterval(function() {',
-    '    if (++tries > 60) { clearInterval(iv); return; }',
-    '    var e = window.EJS_emulator;',
-    '    if (!e || !e.settingsLoaded) return;',
-    '    clearInterval(iv);',
-    '    try {',
-    '      e.changeSettingOption("vice_physical_keyboard_pass_through", "enabled");',
-    '      e.changeSettingOption("keyboardInput", "enabled");',
-    '      e.changeSettingOption("vice_joyport", "2");',
-    '    } catch(ex) {}',
-    '  }, 250);',
-    '};',
-  ].join('\n');
-
-  return '<!DOCTYPE html><html><head><meta charset="UTF-8">' +
-    '<style>*{margin:0;padding:0;box-sizing:border-box}' +
-    'html,body{width:100%;height:100%;background:#000;overflow:hidden}' +
-    '#game{width:100%;height:100%}</style>' +
-    '</head><body><div id="game"></div>' +
-    '<script>\n' + js + '\n' + onStartJs + '\n<\/script>' +
-    '<script src="https://cdn.emulatorjs.org/stable/data/loader.js"><\/script>' +
-    '</body></html>';
-}
-
-function launchEmulator(entry) {
-  document.getElementById('prevtitle').textContent = entry.filename;
-  document.getElementById('prevsub').textContent   = entry.type + ' · ' + entry.blocks + ' BLK';
-
-  if (!curDisk) { emuMsg('NO DISK', true); return; }
-
-  if (emuBlobUrl)  { URL.revokeObjectURL(emuBlobUrl);  emuBlobUrl  = null; }
-  if (emuBlobUrl2) { URL.revokeObjectURL(emuBlobUrl2); emuBlobUrl2 = null; }
-
-  const isFirst = entries_ref.length > 0 && entries_ref[0] === entry;
-
-  let gameUrl, gameName;
-
-  if (isFirst) {
-    // First file → pass full D64, VICE autostarts * and disk stays mounted
-    const blob = new Blob([curDisk.data], { type: 'application/octet-stream' });
-    emuBlobUrl  = URL.createObjectURL(blob);
-    gameUrl  = emuBlobUrl;
-    gameName = 'disk.d64';
-  } else {
-    // Any other file → extract PRG and pass directly, starts the right file instantly
-    const prg = readFileData(entry);
-    if (!prg || prg.length === 0) { emuMsg('EMPTY FILE', true); return; }
-    const blob  = new Blob([prg], { type: 'application/octet-stream' });
-    emuBlobUrl  = URL.createObjectURL(blob);
-    const fname = (entry.fnVice || entry.filename).trim();
-    gameUrl  = emuBlobUrl;
-    gameName = fname + '.prg';
-  }
-
-  document.getElementById('emu-placeholder').style.display = 'none';
-  document.getElementById('prev-info').textContent =
-    (isFirst ? 'D64 · FULL DISK' : 'PRG · ' + entry.blocks + ' BLK');
-
-  const frame = document.getElementById('emu-frame');
-  frame.srcdoc = buildSrcdoc(gameUrl, gameName);
-  frame.style.display = 'block';
-  // On mobile: switch to play mode (fullscreen emulator)
-  if (isMobile()) mobPlay();
-}
-
-function emuMsg(msg, isErr) {
-  document.getElementById('emu-frame').style.display = 'none';
-  const ph = document.getElementById('emu-placeholder');
-  ph.style.display = 'flex';
-  ph.innerHTML =
-    '<span style="font-size:30px;opacity:.3">' + (isErr ? '⚠️' : '⏳') + '</span>' +
-    '<span>' + msg + '</span>' +
-    '<span style="font-size:9px;opacity:.25;margin-top:6px">cdn.emulatorjs.org · vice_x64sc</span>';
-}
-
-// ══ DIRECTORY RENDERER ═══════════════════════════════════════
-function E(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-function tclass(t){ return {PRG:'t-prg',SEQ:'t-seq',REL:'t-rel',USR:'t-usr',
-                             DIR:'t-dir',DEL:'t-del',CBM:'t-cbm'}[t]||''; }
-
-let curDiskPath = ''; // relative path of loaded .d64
-
-function renderDir(info, filename) {
-  const { diskName, diskId, free, entries } = info;
-  document.getElementById('c64title').textContent = diskName;
-  document.getElementById('c64sub').textContent   = filename;
-
-  const lines = [];
-  const dn = diskName.padEnd(16,' ');
-  const did = diskId.padEnd(2,' ') + ' 2A';
-  lines.push(
-    `<div class="dl">` +
-    `<span class="d-blk">    0 </span>` +
-    `<span class="d-id">"</span><span class="rv">${E(dn)}</span><span class="d-id">" ${E(did)}</span>` +
-    `</div>`
-  );
-
-  entries.forEach((e, i) => {
-    const blk  = String(e.blocks).padStart(5,' ');
-    const fn   = e.filename.padEnd(16,' ');
-    const tc   = tclass(e.type);
-    const splat = e.closed ? '' : `<span class="t-nc">*</span>`;
-    const lock  = e.locked ? `<span class="t-lk">&lt;</span>` : '';
-    lines.push(
-      `<div class="dl entry" data-i="${i}">` +
-      `<span class="d-blk">${blk} </span>` +
-      `<span class="d-fn">"${E(fn)}" </span>` +
-      `${splat}<span class="${tc}">${E(e.type)}</span>${lock}` +
-      `</div>`
-    );
+// ── Tabs ───────────────────────────────────────────────────────────────────
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    const name = tab.dataset.tab;
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('page-' + name).classList.add('active');
+    if (name === 'history') renderHistory();
   });
-
-  lines.push(
-    `<div class="dl">` +
-    `<span class="d-blk">${String(free).padStart(5,' ')} </span>` +
-    `<span class="d-free">BLOCKS FREE.</span><span class="cur"></span>` +
-    `</div>`
-  );
-
-  const scr = document.getElementById('c64s');
-  scr.innerHTML = lines.join('');
-  scr.scrollTop = 0;
-
-  // Hover → preview, Click → copy VICE command
-  scr.querySelectorAll('.dl.entry').forEach(el => {
-    const entry = entries[+el.dataset.i];
-    el.addEventListener('click', () => {
-      launchEmulator(entry);
-    });
-  });
-
-  const prg = entries.filter(e => e.type==='PRG').length;
-  document.getElementById('fc').textContent = entries.length;
-  document.getElementById('fp').textContent = prg;
-  document.getElementById('ff').textContent = free;
-  document.getElementById('fid').textContent = diskId.trim() || '??';
-  document.getElementById('c64foot').style.display = 'flex';
-}
-
-// ══ COPY VICE COMMAND ════════════════════════════════════════
-function copyViceCmd(entry) {
-  // x64sc -autostart "cesta\k\disku.d64:NAZEVSOUBORU"
-  const diskWin = curDiskPath.replace(/\//g, '\\');
-  const cmd = `x64sc -autostart "${diskWin}:${(entry.fnVice || entry.filename).trimEnd()}"`;
-  navigator.clipboard.writeText(cmd).then(() => {
-    toast(cmd);
-    // flash the row
-    document.querySelectorAll('.dl.entry').forEach(el => {
-      if (entries_ref[+el.dataset.i] === entry) {
-        el.classList.add('copied');
-        setTimeout(() => el.classList.remove('copied'), 600);
-      }
-    });
-  }).catch(() => toast('NELZE KOPIROVAT — zkus HTTPS', true));
-}
-let entries_ref = [];
-
-// ══ TOAST ════════════════════════════════════════════════════
-let toastTmr = null;
-function toast(msg, err=false) {
-  const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.style.borderColor = err ? '#d83838' : '#38d080';
-  el.style.color        = err ? '#d83838' : '#38d080';
-  el.style.background   = err ? '#1e0e0e' : '#0e1e0e';
-  el.classList.add('show');
-  if (toastTmr) clearTimeout(toastTmr);
-  toastTmr = setTimeout(() => el.classList.remove('show'), 3000);
-}
-
-// ══ LOAD D64 ════════════════════════════════════════════════
-function loadD64(file, name) {
-  setS(`Načítám ${name}…`);
-  curDiskPath = file.webkitRelativePath || file.name;
-  const r = new FileReader();
-  r.onload = ev => {
-    try {
-      const info = parseD64(ev.target.result);
-      curDisk = info;
-      entries_ref = info.entries;
-      renderDir(info, name);
-      setS(`${name} — ${info.entries.length} souborů, ${info.free} bloků volno`);
-    } catch(err) {
-      setS(`Chyba: ${err.message}`);
-    }
-  };
-  r.readAsArrayBuffer(file);
-}
-
-// ══ PC FILE TREE ════════════════════════════════════════════
-let roots=[], expanded=new Set(), selNode=null, flatNodes=[];
-
-function decodePath(p) {
-  try { return decodeURIComponent(p.replace(/\+/g, ' ')); } catch(e) { return p; }
-}
-
-function buildTree(fileList) {
-  const files = Array.from(fileList);
-  if (!files.length) return [];
-  const mob = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || window.innerWidth <= 900;
-
-  if (mob) {
-    // Mobile: flat list of D64 files only — just the filename, no folders
-    const nodes = [];
-    files.forEach(f => {
-      if (!f.name.toLowerCase().endsWith('.d64')) return;
-      const name = decodePath(f.name);
-      nodes.push({ path: name, name, depth:0, isFolder:false, isD64:true, children:[], size:f.size, file:f });
-    });
-    nodes.sort((a,b) => a.name.localeCompare(b.name, undefined, {numeric:true}));
-    return nodes;
-  }
-
-  // Desktop: full folder tree
-  const nm = {};
-  const get = parts => {
-    const key = parts.join('/');
-    if (!nm[key]) nm[key] = { path:key, name:parts[parts.length-1],
-      depth:parts.length-1, isFolder:false, isD64:false, children:[], size:0, file:null };
-    return nm[key];
-  };
-  files.forEach(f => {
-    const parts = (f.webkitRelativePath || f.name).split('/').map(decodePath);
-    for (let i=1; i<=parts.length; i++) {
-      const n = get(parts.slice(0,i));
-      if (i < parts.length) { n.isFolder = true; }
-      else { n.isD64 = f.name.toLowerCase().endsWith('.d64'); n.size=f.size; n.file=f; }
-      if (i > 1) {
-        const p = get(parts.slice(0,i-1));
-        if (!p.children.find(c=>c.path===n.path)) p.children.push(n);
-      }
-    }
-  });
-  function srt(ns) {
-    ns.sort((a,b) => {
-      if (a.isFolder!==b.isFolder) return a.isFolder?-1:1;
-      if (a.isD64!==b.isD64) return a.isD64?-1:1;
-      return a.name.localeCompare(b.name,undefined,{numeric:true});
-    });
-    ns.forEach(n => n.children.length && srt(n.children));
-  }
-  const rootName = decodePath((files[0].webkitRelativePath||files[0].name).split('/')[0]);
-  const rn = nm[rootName];
-  if (!rn) return [];
-  rn.isFolder=true; srt(rn.children); return [rn];
-}
-
-function hasMatch(n,f){ if(!f)return true; if(n.name.toLowerCase().includes(f))return true; return n.children.some(c=>hasMatch(c,f)); }
-
-function flatten(nodes,res=[],f=''){
-  const fl=f.toLowerCase();
-  nodes.forEach(n=>{
-    const m=!fl||n.name.toLowerCase().includes(fl);
-    const cm=fl?hasMatch(n,fl):true;
-    if(!fl||m||(n.isFolder&&cm)){
-      res.push(n);
-      if(n.isFolder&&(expanded.has(n.path)||(fl&&cm))) flatten(n.children,res,f);
-    }
-  });
-  return res;
-}
-
-function fmtSz(b){ if(!b)return''; if(b<1024)return b+'B'; if(b<1048576)return(b/1024).toFixed(0)+'K'; return(b/1048576).toFixed(1)+'M'; }
-function Esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-
-function renderTree(){
-  const f=document.getElementById('tflt').value;
-  flatNodes=flatten(roots,[],f);
-  let h='';
-  flatNodes.forEach((n,i)=>{
-    const ind=n.depth*12, hc=n.isFolder&&n.children.length>0;
-    const exp=expanded.has(n.path)||(f&&hasMatch(n,f.toLowerCase()));
-    // PETSCII-style tree chars: folder open=▼ closed=▶, files=·
-    const tog=hc?(exp?'▼':'▶'):'·';
-    const nc=n.isFolder?'fld':(n.isD64?'d64':'fil');
-    const sel=(selNode&&selNode.path===n.path)?' sel':'';
-    // D64 prefix marker, size for files
-    const prefix=n.isD64?'•':' ';
-    const sz=(!n.isFolder&&n.size)?`<span class="nsz">${fmtSz(n.size)}</span>`:'';
-    const name=n.name.toUpperCase();
-    h+=`<div class="tn${sel}" data-i="${i}" style="padding-left:${4+ind}px">` +
-       `<span class="ntog">${tog}</span>` +
-       `<span class="nn ${nc}">${prefix}${Esc(name)}</span>${sz}</div>`;
-  });
-  document.getElementById('tree').innerHTML=h;
-  document.getElementById('tree').querySelectorAll('.tn').forEach(el=>{
-    el.addEventListener('click',()=>{
-      const n=flatNodes[+el.dataset.i]; if(!n)return;
-      if(n.isFolder){ expanded.has(n.path)?expanded.delete(n.path):expanded.add(n.path); renderTree(); }
-      else { selNode=n; renderTree(); if(n.isD64&&n.file) loadD64(n.file,n.name); else setS(`${n.name} — není .d64`); }
-    });
-  });
-}
-
-function countTree(nodes,s={f:0,d:0,x:0}){
-  nodes.forEach(n=>{if(n.isFolder){s.f++;countTree(n.children,s);}else if(n.isD64)s.d++;else s.x++;});
-  return s;
-}
-
-function loadFolder(fl){
-  // Show spinner in status bar
-  const st = document.getElementById('st');
-  st.innerHTML = '<span class="spinning">◈</span> LOADING...';
-  requestAnimationFrame(()=>requestAnimationFrame(()=>{
-    roots=buildTree(fl); expanded=new Set();
-    if(roots.length && roots[0].isFolder) expanded.add(roots[0].path);
-    document.getElementById('dz').style.display='none';
-    document.getElementById('tw').style.display='block';
-    document.getElementById('tb').style.display='flex';
-    const s=countTree(roots);
-    document.getElementById('pf').textContent=s.f;
-    document.getElementById('pd').textContent=s.d;
-    document.getElementById('px').textContent=s.x;
-    document.getElementById('pcpath').textContent=roots[0]?.name||'—';
-    renderTree();
-    setS('LOADED: ' + s.d + ' D64, ' + s.f + ' DIRS');
-  }));
-}
-
-// Folder open via input
-const fi = document.createElement('input');
-fi.type='file'; fi.setAttribute('webkitdirectory',''); fi.multiple=true; fi.style.display='none';
-document.body.appendChild(fi);
-fi.addEventListener('change', e=>{ if(e.target.files.length) loadFolder(e.target.files); });
-
-document.getElementById('dz').addEventListener('click', ()=>fi.click());
-
-// Drag & drop
-const lpEl=document.getElementById('lp'), dzEl=document.getElementById('dz');
-lpEl.addEventListener('dragover', e=>{e.preventDefault();dzEl.classList.add('on');});
-lpEl.addEventListener('dragenter',e=>{e.preventDefault();});
-lpEl.addEventListener('dragleave',e=>{if(!lpEl.contains(e.relatedTarget))dzEl.classList.remove('on');});
-lpEl.addEventListener('drop',e=>{e.preventDefault();dzEl.classList.remove('on');if(e.dataTransfer.files.length)loadFolder(e.dataTransfer.files);});
-
-// Toolbar buttons
-document.getElementById('tflt').addEventListener('input',renderTree);
-document.getElementById('btnC').addEventListener('click',()=>{expanded.clear();if(roots.length)expanded.add(roots[0].path);renderTree();});
-document.getElementById('btnE').addEventListener('click',()=>{function ea(n){expanded.add(n.path);n.children.forEach(ea);}roots.forEach(ea);renderTree();});
-document.getElementById('btnR').addEventListener('click',()=>fi.click());
-document.addEventListener('keydown',e=>{if(e.key==='F5'){e.preventDefault();fi.click();}});
-
-// ══ RESIZE ══════════════════════════════════════════════════
-function makeResizer(rzId, leftEl, rightEl, invertDelta) {
-  const rz = document.getElementById(rzId);
-  let down=false, x0=0, w0=0;
-  rz.addEventListener('mousedown', e=>{
-    down=true; x0=e.clientX; w0=leftEl.offsetWidth;
-    rz.classList.add('on'); document.body.style.cssText='cursor:col-resize;user-select:none';
-  });
-  document.addEventListener('mousemove', e=>{
-    if(!down)return;
-    const delta = invertDelta ? (x0-e.clientX) : (e.clientX-x0);
-    leftEl.style.width = Math.max(140, Math.min(window.innerWidth-400, w0+delta))+'px';
-  });
-  document.addEventListener('mouseup',()=>{
-    if(!down)return; down=false; rz.classList.remove('on'); document.body.style.cssText='';
-  });
-}
-makeResizer('rz1', document.getElementById('lp'),  null, false);
-makeResizer('rz2', document.getElementById('mp'),  null, false);
-
-// ══ CLOCK & STATUS ══════════════════════════════════════════
-function setS(m){const e=document.getElementById('st');e.innerHTML='';e.textContent=String(m).toUpperCase();}
-function tick(){
-  const n=new Date();
-  document.getElementById('clk').textContent=
-    [n.getHours(),n.getMinutes(),n.getSeconds()].map(v=>String(v).padStart(2,'0')).join(':');
-}
-tick(); setInterval(tick,1000);
-
-// ══ MOBILE MODE SWITCHING ════════════════════════════════════
-const isMobile = () => /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || window.innerWidth <= 900;
-
-function mobBrowse() {
-  document.body.classList.remove('mob-play');
-  document.body.classList.add('mob-browse');
-  // Fully reset iframe — replace with fresh one so next srcdoc assignment works
-  const frame = document.getElementById('emu-frame');
-  const newFrame = document.createElement('iframe');
-  newFrame.id = 'emu-frame';
-  newFrame.style.cssText = 'display:none;width:100%;height:100%;border:none;';
-  frame.parentNode.replaceChild(newFrame, frame);
-  document.getElementById('emu-placeholder').style.display = 'flex';
-  if (emuBlobUrl)  { URL.revokeObjectURL(emuBlobUrl);  emuBlobUrl  = null; }
-  if (emuBlobUrl2) { URL.revokeObjectURL(emuBlobUrl2); emuBlobUrl2 = null; }
-}
-
-function mobPlay() {
-  document.body.classList.remove('mob-browse');
-  document.body.classList.add('mob-play');
-}
-
-// Init mobile mode on load
-function initMobMode() {
-  if (isMobile()) {
-    // Only set browse mode if not already in play mode
-    if (!document.body.classList.contains('mob-play')) {
-      document.body.classList.add('mob-browse');
-    }
-  } else {
-    // Desktop — remove mobile classes only if not playing
-    if (!document.body.classList.contains('mob-play')) {
-      document.body.classList.remove('mob-browse','mob-play');
-    }
-  }
-}
-initMobMode();
-window.addEventListener('resize', initMobMode);
-
-// Lock to landscape on mobile
-if (isMobile() && screen.orientation && screen.orientation.lock) {
-  screen.orientation.lock('landscape').catch(()=>{});
-}
-
-// Back button → return to browse
-document.getElementById('mob-back').addEventListener('click', mobBrowse);
-
-// ══ PWA — MANIFEST + SERVICE WORKER ════════════════════════
-(function() {
-  // Inline manifest as blob URL so it works from a local file
-  const manifest = {
-    name: 'C64 Disk Manager',
-    short_name: 'C64 Manager',
-    description: 'C64 disk image browser and VICE emulator',
-    start_url: '.',
-    display: 'standalone',
-    orientation: 'any',
-    background_color: '#18186a',
-    theme_color: '#18186a',
-    icons: [
-      { src: 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192"><rect width="192" height="192" fill="#18186a"/><rect x="16" y="16" width="160" height="160" rx="18" fill="#3535c0"/><text x="96" y="130" font-size="100" text-anchor="middle" fill="#d0d0ff" font-family="monospace" font-weight="bold">64</text></svg>`),
-        sizes: '192x192', type: 'image/svg+xml', purpose: 'any maskable' },
-      { src: 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" fill="#18186a"/><rect x="32" y="32" width="448" height="448" rx="48" fill="#3535c0"/><text x="256" y="360" font-size="280" text-anchor="middle" fill="#d0d0ff" font-family="monospace" font-weight="bold">64</text></svg>`),
-        sizes: '512x512', type: 'image/svg+xml', purpose: 'any maskable' }
-    ]
-  };
-  const mBlob = new Blob([JSON.stringify(manifest)], {type:'application/json'});
-  document.getElementById('pwa-manifest').href = URL.createObjectURL(mBlob);
-
-  // Service Worker — caches app shell for offline use
-  if ('serviceWorker' in navigator) {
-    const swCode = `
-const CACHE = 'c64mgr-v1';
-const PRECACHE = [
-  'https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap',
-  'https://cdn.emulatorjs.org/stable/data/loader.js',
-];
-self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(PRECACHE).catch(()=>{})));
-  self.skipWaiting();
 });
-self.addEventListener('activate', e => {
-  e.waitUntil(clients.claim());
-});
-self.addEventListener('fetch', e => {
-  if (e.request.method !== 'GET') return;
-  e.respondWith(
-    caches.match(e.request).then(r => r || fetch(e.request).then(res => {
-      if (res.ok && e.request.url.startsWith('https://cdn.emulatorjs.org')) {
-        caches.open(CACHE).then(c => c.put(e.request, res.clone()));
-      }
-      return res;
-    }).catch(() => caches.match(e.request)))
-  );
-});`;
-    const swBlob = new Blob([swCode], {type:'application/javascript'});
-    const swUrl  = URL.createObjectURL(swBlob);
-    navigator.serviceWorker.register(swUrl, {scope: '/'})
-      .catch(()=>{}); // fails silently on file:// — ok
+
+// ── Camera ─────────────────────────────────────────────────────────────────
+async function startCamera() {
+  try {
+    if (stream) stream.getTracks().forEach(t => t.stop());
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode, width: { ideal: 1920 }, height: { ideal: 1080 } },
+      audio: false
+    });
+    video.srcObject = stream;
+    video.style.display = 'block';
+    noCam.classList.remove('show');
+  } catch (e) {
+    video.style.display = 'none';
+    noCam.classList.add('show');
   }
-})();
+}
+
+flipBtn.addEventListener('click', () => {
+  facingMode = facingMode === 'environment' ? 'user' : 'environment';
+  startCamera();
+});
+
+// ── Capture from camera ────────────────────────────────────────────────────
+function captureFrame() {
+  const vw = video.videoWidth || 1280;
+  const vh = video.videoHeight || 720;
+
+  // Detect orientation — on mobile the video stream can be rotated
+  // screen.orientation.angle: 0=portrait, 90=landscape-left, -90/270=landscape-right
+  const angle = (screen.orientation && screen.orientation.angle) || window.orientation || 0;
+  const rotate = angle === 90 || angle === -90 || angle === 270;
+
+  // If rotated, swap canvas dimensions so the output is always landscape-correct
+  snapCanvas.width  = rotate ? vh : vw;
+  snapCanvas.height = rotate ? vw : vh;
+
+  const ctx = snapCanvas.getContext('2d');
+
+  if (rotate) {
+    // Rotate canvas 90° to correct orientation
+    ctx.translate(snapCanvas.width / 2, snapCanvas.height / 2);
+    ctx.rotate((angle === 90 ? 1 : -1) * Math.PI / 2);
+    ctx.drawImage(video, -vw / 2, -vh / 2, vw, vh);
+    ctx.setTransform(1, 0, 0, 1, 0, 0); // reset transform
+  } else {
+    ctx.drawImage(video, 0, 0, vw, vh);
+  }
+
+  return {
+    b64: snapCanvas.toDataURL('image/jpeg', 0.92).split(',')[1],
+    mime: 'image/jpeg'
+  };
+}
+
+// ── Shutter ────────────────────────────────────────────────────────────────
+shutter.addEventListener('click', async () => {
+  if (isAnalyzing) return;
+  if (!apiKey) { openSettings('Nejprve nastav API klíč!'); return; }
+
+  let b64, mime;
+
+  if (usingUploadedImage && currentImageB64) {
+    b64 = currentImageB64;
+    mime = currentMime;
+  } else {
+    if (!stream) { alert('Kamera není dostupná. Použij galerii.'); return; }
+    const captured = captureFrame();
+    b64 = captured.b64;
+    mime = captured.mime;
+  }
+
+  await analyze(b64, mime, null);
+});
+
+// ── Upload from gallery ────────────────────────────────────────────────────
+uploadBtn.addEventListener('click', () => fileInput.click());
+
+fileInput.addEventListener('change', () => {
+  const file = fileInput.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const dataUrl = e.target.result;
+    currentImageB64 = dataUrl.split(',')[1];
+    currentMime = file.type || 'image/jpeg';
+    usingUploadedImage = true;
+    // Show preview
+    previewImg.src = dataUrl;
+    previewOverlay.classList.add('show');
+    hideToast();
+  };
+  reader.readAsDataURL(file);
+  fileInput.value = '';
+});
+
+previewClose.addEventListener('click', () => {
+  previewOverlay.classList.remove('show');
+  usingUploadedImage = false;
+  currentImageB64 = null;
+});
+
+// ── Analyze with Claude API ────────────────────────────────────────────────
+async function analyze(b64, mime, thumbnailUrl) {
+  isAnalyzing = true;
+  shutter.classList.add('loading');
+  scanOverlay.classList.add('scanning-active');
+  hideToast();
+
+  // Capture thumbnail if from camera
+  if (!thumbnailUrl && stream) {
+    thumbnailUrl = snapCanvas.toDataURL('image/jpeg', 0.4);
+  } else if (!thumbnailUrl && usingUploadedImage) {
+    thumbnailUrl = previewImg.src;
+  }
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-opus-4-5',
+        max_tokens: 300,
+        system: `Jsi OCR systém specializovaný na SPZ. Odpověz POUZE jako validní JSON bez markdown:
+{"found":true,"spz":"1A2 3456","country":"CZ","vehicle":"červené osobní auto","confidence":"high"}
+Pokud SPZ není čitelná: {"found":false,"vehicle":"popis co je vidět","confidence":"low"}
+Pravidla: spz vždy VELKÝMI PÍSMENY s mezerou (1A2 3456 nebo 1AB 1234), country = kód státu (CZ/SK/DE/...).`,
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'image', source: { type: 'base64', media_type: mime, data: b64 } },
+            { type: 'text', text: 'Rozpoznej SPZ.' }
+          ]
+        }]
+      })
+    });
+
+    const data = await res.json();
+    if (data.error) throw new Error(data.error.message);
+
+    const raw = (data.content || []).map(x => x.text || '').join('');
+    const result = JSON.parse(raw.replace(/```json|```/g, '').trim());
+
+    showToast(result);
+    saveToHistory(result, thumbnailUrl);
+
+    // Close preview overlay after scan
+    if (usingUploadedImage) {
+      setTimeout(() => {
+        previewOverlay.classList.remove('show');
+        usingUploadedImage = false;
+      }, 400);
+    }
+
+  } catch(e) {
+    showToastError(e.message.includes('401') ? 'Neplatný API klíč' : e.message.substring(0, 60));
+  } finally {
+    isAnalyzing = false;
+    shutter.classList.remove('loading');
+    scanOverlay.classList.remove('scanning-active');
+  }
+}
+
+// ── Toast ──────────────────────────────────────────────────────────────────
+async function copyToClipboard(spz) {
+  if (!spz) return;
+  try {
+    await navigator.clipboard.writeText(spz);
+  } catch(e) {
+    const el = document.createElement('textarea');
+    el.value = spz; el.style.cssText = 'position:fixed;opacity:0';
+    document.body.appendChild(el); el.select();
+    document.execCommand('copy'); document.body.removeChild(el);
+  }
+  showCopyFeedback(spz);
+}
+
+function showCopyFeedback(spz) {
+  const fb = document.createElement('div');
+  fb.style.cssText = `
+    position:fixed;bottom:130px;left:50%;transform:translateX(-50%);
+    background:var(--green);color:#080a0d;
+    font-family:'JetBrains Mono',monospace;font-size:0.72rem;font-weight:700;letter-spacing:2px;
+    padding:8px 18px;border-radius:20px;z-index:9999;white-space:nowrap;pointer-events:none;
+  `;
+  fb.textContent = `✓ ZKOPÍROVÁNO: ${spz}`;
+  document.body.appendChild(fb);
+  setTimeout(() => fb.remove(), 1600);
+}
+
+function showToast(result) {
+  toastPlate.innerHTML = '';
+  toastMeta.innerHTML = '';
+
+  if (result.found && result.spz) {
+    toastLabel.textContent = '▸ SPZ ROZPOZNÁNA · ZKOPÍROVÁNO DO SCHRÁNKY';
+    const plate = document.createElement('div');
+    plate.className = 'mini-plate';
+    plate.style.cursor = 'pointer';
+    plate.title = 'Klikni pro opětovné kopírování';
+    plate.innerHTML = `
+      <div class="mini-eu">
+        <span class="mini-stars">★★★<br>★ ★<br>★★★</span>
+        <span class="mini-cc">${(result.country||'CZ').toUpperCase()}</span>
+      </div>
+      <span class="mini-num">${escHtml(result.spz)}</span>`;
+    plate.addEventListener('click', () => copyToClipboard(result.spz));
+    toastPlate.appendChild(plate);
+    if (result.vehicle) toastMeta.textContent = result.vehicle;
+    copyToClipboard(result.spz);
+  } else {
+    toastLabel.textContent = '▸ VÝSLEDEK';
+    toastPlate.innerHTML = `<span class="toast-not-found">SPZ NENALEZENA</span>`;
+    if (result.vehicle) toastMeta.textContent = result.vehicle;
+  }
+
+  resultToast.classList.add('show');
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(hideToast, 6000);
+}
+
+function showToastError(msg) {
+  toastLabel.textContent = '▸ CHYBA';
+  toastPlate.innerHTML = `<span class="toast-not-found" style="color:#f0c040">${escHtml(msg)}</span>`;
+  toastMeta.innerHTML = '';
+  resultToast.classList.add('show');
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(hideToast, 5000);
+}
+
+function hideToast() { resultToast.classList.remove('show'); }
+toastClose.addEventListener('click', hideToast);
+
+// ── History ────────────────────────────────────────────────────────────────
+function saveToHistory(result, thumbnail) {
+  const entry = {
+    id: Date.now(),
+    timestamp: new Date().toISOString(),
+    found: result.found,
+    spz: result.spz || null,
+    country: result.country || 'CZ',
+    vehicle: result.vehicle || '',
+    thumbnail: thumbnail || null
+  };
+  history.unshift(entry);
+  if (history.length > 100) history = history.slice(0, 100);
+  localStorage.setItem('spz_history', JSON.stringify(history));
+}
+
+function renderHistory() {
+  historyList.innerHTML = '';
+
+  if (history.length === 0) {
+    historyList.innerHTML = `
+      <div class="history-empty">
+        <div class="history-empty-icon">🔍</div>
+        <p>ZATÍM ŽÁDNÉ SKENY<br>NASKENUJTE PRVNÍ SPZ</p>
+      </div>`;
+    return;
+  }
+
+  history.forEach((entry, idx) => {
+    const div = document.createElement('div');
+    div.className = 'history-item';
+    div.style.cursor = 'pointer';
+    div.dataset.idx = idx;
+    div.innerHTML = `
+      ${entry.thumbnail
+        ? `<img class="history-thumb" src="${entry.thumbnail}" alt="">`
+        : `<div class="history-thumb-placeholder">🚗</div>`}
+      <div class="history-info">
+        ${entry.found && entry.spz
+          ? `<div class="history-plate" style="cursor:pointer" title="Klikni pro kopírování" onclick="copyToClipboard('${escHtml(entry.spz)}')">
+              <div class="h-eu">
+                <span class="h-stars">★★★<br>★ ★<br>★★★</span>
+                <span class="h-cc">${escHtml((entry.country||'CZ').toUpperCase())}</span>
+              </div>
+              <span class="h-num">${escHtml(entry.spz)}</span>
+            </div>`
+          : `<div class="history-not-found">🔍 ${escHtml((entry.vehicle||'SPZ nenalezena').substring(0,35))}</div>`}
+        <div class="history-time">${formatTime(entry.timestamp)}${entry.vehicle ? ' · ' + entry.vehicle.substring(0,30) : ''}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0">
+        ${entry.found && entry.spz ? `<button class="ckp-btn" data-spz="${entry.spz}">🛡 CKP</button>` : ''}
+        <button class="history-delete" data-idx="${idx}">🗑</button>
+      </div>
+    `;
+    historyList.appendChild(div);
+  });
+
+  document.querySelectorAll('.history-delete').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const idx = parseInt(btn.dataset.idx);
+      history.splice(idx, 1);
+      localStorage.setItem('spz_history', JSON.stringify(history));
+      renderHistory();
+    });
+  });
+
+  document.querySelectorAll('.ckp-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const spz = btn.dataset.spz;
+      navigator.clipboard.writeText(spz).catch(() => {
+        const el = document.createElement('textarea');
+        el.value = spz; el.style.cssText = 'position:fixed;opacity:0';
+        document.body.appendChild(el); el.select();
+        document.execCommand('copy'); document.body.removeChild(el);
+      });
+      showCopyFeedback(spz);
+      window.open('https://ic.ckp.cz/ICwww/servlet?_page=searchSPZ', '_blank');
+    });
+  });
+
+  document.querySelectorAll('.history-delete').forEach(btn => {
+    btn.addEventListener('click', (e) => e.stopPropagation());
+  });
+
+  document.querySelectorAll('.history-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const idx = parseInt(item.dataset.idx);
+      openDetailModal(history[idx]);
+    });
+  });
+}
+
+clearHistBtn.addEventListener('click', () => {
+  if (history.length === 0) return;
+  if (confirm('Smazat celou historii?')) {
+    history = [];
+    localStorage.setItem('spz_history', JSON.stringify(history));
+    renderHistory();
+  }
+});
+
+function formatTime(iso) {
+  const d = new Date(iso);
+  const now = new Date();
+  const diff = (now - d) / 1000;
+  if (diff < 60) return 'Právě teď';
+  if (diff < 3600) return `Před ${Math.floor(diff/60)} min`;
+  if (diff < 86400) return `Dnes ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`;
+  return `${d.getDate()}.${d.getMonth()+1}. ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`;
+}
+
+// ── Detail modal ──────────────────────────────────────────────────────────
+const detailModal    = document.getElementById('detailModal');
+const detailImgWrap  = document.getElementById('detailImgWrap');
+const detailPlateWrap= document.getElementById('detailPlateWrap');
+const detailScene    = document.getElementById('detailScene');
+const detailTime     = document.getElementById('detailTime');
+const detailCopyBtn  = document.getElementById('detailCopyBtn');
+const detailCloseBtn = document.getElementById('detailCloseBtn');
+
+function openDetailModal(entry) {
+  // Image
+  detailImgWrap.innerHTML = '';
+  if (entry.thumbnail) {
+    const img = document.createElement('img');
+    img.src = entry.thumbnail;
+    detailImgWrap.appendChild(img);
+  } else {
+    detailImgWrap.innerHTML = '<div class="detail-img-placeholder">📷</div>';
+  }
+
+  // Plate or no-plate
+  detailPlateWrap.innerHTML = '';
+  if (entry.found && entry.spz) {
+    const plate = document.createElement('div');
+    plate.className = 'mini-plate';
+    plate.style.transform = 'scale(1.3)';
+    plate.style.margin = '8px 0';
+    plate.innerHTML = `
+      <div class="mini-eu">
+        <span class="mini-stars">★★★<br>★ ★<br>★★★</span>
+        <span class="mini-cc">${escHtml((entry.country||'CZ').toUpperCase())}</span>
+      </div>
+      <span class="mini-num">${escHtml(entry.spz)}</span>`;
+    detailPlateWrap.appendChild(plate);
+  } else {
+    detailPlateWrap.innerHTML = `<span style="font-family:'JetBrains Mono',monospace;font-size:0.8rem;color:var(--red);letter-spacing:2px">SPZ NENALEZENA</span>`;
+  }
+
+  // Scene description
+  detailScene.textContent = entry.vehicle || 'Žádný popis';
+
+  // Time
+  detailTime.textContent = '🕐 ' + new Date(entry.timestamp).toLocaleString('cs-CZ');
+
+  // Copy button
+  const copyText = entry.spz || entry.vehicle || '';
+  detailCopyBtn.onclick = () => {
+    copyToClipboard(copyText);
+    detailCopyBtn.textContent = '✓ ZKOPÍROVÁNO';
+    setTimeout(() => detailCopyBtn.textContent = '📋 ZKOPÍROVAT', 1500);
+  };
+
+  detailModal.classList.add('show');
+}
+
+detailCloseBtn.addEventListener('click', () => detailModal.classList.remove('show'));
+detailModal.addEventListener('click', e => { if (e.target === detailModal) detailModal.classList.remove('show'); });
+
+// ── Settings ───────────────────────────────────────────────────────────────
+function openSettings(msg) {
+  keyInput.value = apiKey;
+  keyStatus.className = 'key-status';
+  if (msg) {
+    keyStatus.textContent = msg;
+    keyStatus.className = 'key-status err';
+  }
+  settingsModal.classList.add('show');
+}
+
+settingsBtn.addEventListener('click', () => openSettings());
+settingsModal.addEventListener('click', e => {
+  if (e.target === settingsModal) settingsModal.classList.remove('show');
+});
+
+eyeBtn.addEventListener('click', () => {
+  keyInput.type = keyInput.type === 'password' ? 'text' : 'password';
+});
+
+document.getElementById('keyFileBtn').addEventListener('click', () => {
+  document.getElementById('key-file-input').click();
+});
+
+document.getElementById('key-file-input').addEventListener('change', function(e) {
+  var file = e.target.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(ev) {
+    var text = ev.target.result.trim();
+    var lines = text.split(/[\r\n]+/).map(function(l) { return l.trim(); });
+    var key = '';
+    for (var i = 0; i < lines.length; i++) {
+      if (lines[i].indexOf('sk-ant-') === 0) { key = lines[i]; break; }
+    }
+    if (!key && lines.length > 0 && lines[0].length > 10) key = lines[0];
+    if (key) {
+      keyInput.value = key;
+      keyStatus.textContent = '✓ KLÍČ NAČTEN ZE SOUBORU';
+      keyStatus.className = 'key-status ok';
+    } else {
+      keyStatus.textContent = '✗ V SOUBORU NEBYL NALEZEN KLÍČ';
+      keyStatus.className = 'key-status err';
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+});
+
+saveKeyBtn.addEventListener('click', () => {
+  const key = keyInput.value.trim();
+  if (!key) {
+    keyStatus.textContent = 'Zadej API klíč!';
+    keyStatus.className = 'key-status err';
+    return;
+  }
+  apiKey = key;
+  localStorage.setItem('spz_apikey', key);
+  keyStatus.textContent = '✓ ULOŽENO';
+  keyStatus.className = 'key-status ok';
+  setTimeout(() => settingsModal.classList.remove('show'), 800);
+});
+
+// ── Utils ──────────────────────────────────────────────────────────────────
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ── PWA Service Worker ─────────────────────────────────────────────────────
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/scanSPZ/sw.js').catch(() => {});
+}
+
+// ── Fullscreen on landscape ────────────────────────────────────────────────
+function isLandscape() {
+  return window.innerWidth > window.innerHeight;
+}
+
+function enterFullscreen() {
+  const el = document.documentElement;
+  const req = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen || el.msRequestFullscreen;
+  if (req) req.call(el).catch(() => {});
+}
+
+function exitFullscreen() {
+  const ex = document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen || document.msExitFullscreen;
+  if (ex) ex.call(document).catch(() => {});
+}
+
+window.addEventListener('orientationchange', () => {
+  setTimeout(() => {
+    if (isLandscape()) enterFullscreen();
+    else exitFullscreen();
+  }, 150);
+});
+
+screen.orientation && screen.orientation.addEventListener('change', () => {
+  setTimeout(() => {
+    if (isLandscape()) enterFullscreen();
+    else exitFullscreen();
+  }, 150);
+});
+
+// Also handle resize as fallback
+window.addEventListener('resize', () => {
+  if (isLandscape()) enterFullscreen();
+  else exitFullscreen();
+});
+
+// ── Init ───────────────────────────────────────────────────────────────────
+startCamera();
+
+// Show settings on first launch
+if (!apiKey) {
+  setTimeout(() => openSettings('Pro použití nastav Claude API klíč'), 600);
+}
+
+// Enter fullscreen if already landscape on load
+if (isLandscape()) enterFullscreen();
 </script>
 </body>
 </html>
