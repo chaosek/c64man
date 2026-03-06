@@ -1,4 +1,4 @@
-const CACHE = 'c64mgr-v3';
+const CACHE = 'c64mgr-v4';
 const PRECACHE = [
   '/',
   '/index.html',
