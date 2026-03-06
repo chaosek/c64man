@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="C64 Manager">
-<link rel="manifest" href="./manifest.json">
+<link rel="manifest" id="pwa-manifest">
 <title>C64 Disk Manager</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
@@ -962,11 +962,14 @@ let roots=[], expanded=new Set(), selNode=null, flatNodes=[];
 function buildTree(fileList) {
   const files = Array.from(fileList);
   if (!files.length) return [];
-  const rootName = (files[0].webkitRelativePath || files[0].name).split('/')[0];
+  const _rootRaw = (files[0].webkitRelativePath || files[0].name).split('/')[0];
+  const rootName = (() => { try { return decodeURIComponent(_rootRaw.replace(/\+/g,' ')); } catch(e) { return _rootRaw; } })();
   const nm = {};
   const get = parts => {
     const key = parts.join('/');
-    if (!nm[key]) nm[key] = { path:key, name:parts[parts.length-1],
+    const _rn = parts[parts.length-1];
+    const _dn = (() => { try { return decodeURIComponent(_rn.replace(/\+/g,' ')); } catch(e) { return _rn; } })();
+    if (!nm[key]) nm[key] = { path:key, name:_dn,
       depth:parts.length-1, isFolder:false, isD64:false, children:[], size:0, file:null };
     return nm[key];
   };
@@ -1149,10 +1152,56 @@ document.getElementById('mob-back').addEventListener('click', mobBrowse);
 
 // ══ PWA — MANIFEST + SERVICE WORKER ════════════════════════
 (function() {
+  // Inline manifest as blob URL so it works from a local file
+  const manifest = {
+    name: 'C64 Disk Manager',
+    short_name: 'C64 Manager',
+    description: 'C64 disk image browser and VICE emulator',
+    start_url: '.',
+    display: 'standalone',
+    orientation: 'any',
+    background_color: '#18186a',
+    theme_color: '#18186a',
+    icons: [
+      { src: 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192"><rect width="192" height="192" fill="#18186a"/><rect x="16" y="16" width="160" height="160" rx="18" fill="#3535c0"/><text x="96" y="130" font-size="100" text-anchor="middle" fill="#d0d0ff" font-family="monospace" font-weight="bold">64</text></svg>`),
+        sizes: '192x192', type: 'image/svg+xml', purpose: 'any maskable' },
+      { src: 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" fill="#18186a"/><rect x="32" y="32" width="448" height="448" rx="48" fill="#3535c0"/><text x="256" y="360" font-size="280" text-anchor="middle" fill="#d0d0ff" font-family="monospace" font-weight="bold">64</text></svg>`),
+        sizes: '512x512', type: 'image/svg+xml', purpose: 'any maskable' }
+    ]
+  };
+  const mBlob = new Blob([JSON.stringify(manifest)], {type:'application/json'});
+  document.getElementById('pwa-manifest').href = URL.createObjectURL(mBlob);
+
   // Service Worker — caches app shell for offline use
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js', {scope: './'})
-      .catch(()=>{});
+    const swCode = `
+const CACHE = 'c64mgr-v1';
+const PRECACHE = [
+  'https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap',
+  'https://cdn.emulatorjs.org/stable/data/loader.js',
+];
+self.addEventListener('install', e => {
+  e.waitUntil(caches.open(CACHE).then(c => c.addAll(PRECACHE).catch(()=>{})));
+  self.skipWaiting();
+});
+self.addEventListener('activate', e => {
+  e.waitUntil(clients.claim());
+});
+self.addEventListener('fetch', e => {
+  if (e.request.method !== 'GET') return;
+  e.respondWith(
+    caches.match(e.request).then(r => r || fetch(e.request).then(res => {
+      if (res.ok && e.request.url.startsWith('https://cdn.emulatorjs.org')) {
+        caches.open(CACHE).then(c => c.put(e.request, res.clone()));
+      }
+      return res;
+    }).catch(() => caches.match(e.request)))
+  );
+});`;
+    const swBlob = new Blob([swCode], {type:'application/javascript'});
+    const swUrl  = URL.createObjectURL(swBlob);
+    navigator.serviceWorker.register(swUrl, {scope: '/'})
+      .catch(()=>{}); // fails silently on file:// — ok
   }
 })();
 </script>
