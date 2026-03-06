@@ -130,20 +130,9 @@ body { background:#080810; display:flex; flex-direction:column; }
   letter-spacing:.5px; text-transform:uppercase;
 }
 
-/* loading bar — fixed at very top of screen */
-#load-bar {
-  display:none; position:fixed; top:0; left:0; right:0; height:4px;
-  background:var(--c64dark); z-index:9999;
-}
-#load-bar-fill {
-  height:100%; width:10%;
-  background:var(--c64cyan);
-}
-@keyframes loadpulse {
-  0%   { width:10%; margin-left:0%; }
-  50%  { width:50%; margin-left:25%; }
-  100% { width:10%; margin-left:90%; }
-}
+/* loading spinner in status text */
+@keyframes spin { to { transform:rotate(360deg); } }
+.spinning { display:inline-block; animation:spin 0.6s linear infinite; }
 
 /* drop zone */
 #dz {
@@ -395,7 +384,6 @@ body { background:#080810; display:flex; flex-direction:column; }
 
   <!-- PANEL 1: PC file tree — C64 PETSCII style -->
   <div id="lp">
-    <div id="load-bar"><div id="load-bar-fill"></div></div>
     <div id="dz">
       <div class="di">&#x1F4BE;</div>
       <div class="dt">LOAD FOLDER</div>
@@ -1083,11 +1071,9 @@ function countTree(nodes,s={f:0,d:0,x:0}){
 }
 
 function loadFolder(fl){
-  const bar  = document.getElementById('load-bar');
-  const fill = document.getElementById('load-bar-fill');
-  bar.style.display = 'block';
-  fill.style.animation = 'loadpulse 0.8s ease-in-out infinite';
-  // Yield to browser to render bar, then do work
+  // Show spinner in status bar
+  const st = document.getElementById('st');
+  st.innerHTML = '<span class="spinning">◈</span> LOADING...';
   requestAnimationFrame(()=>requestAnimationFrame(()=>{
     roots=buildTree(fl); expanded=new Set();
     if(roots.length && roots[0].isFolder) expanded.add(roots[0].path);
@@ -1100,9 +1086,7 @@ function loadFolder(fl){
     document.getElementById('px').textContent=s.x;
     document.getElementById('pcpath').textContent=roots[0]?.name||'—';
     renderTree();
-    setS('Načteno: ' + s.d + ' disket, ' + s.f + ' složek');
-    fill.style.animation='none';
-    bar.style.display='none';
+    setS('LOADED: ' + s.d + ' D64, ' + s.f + ' DIRS');
   }));
 }
 
@@ -1149,7 +1133,7 @@ makeResizer('rz1', document.getElementById('lp'),  null, false);
 makeResizer('rz2', document.getElementById('mp'),  null, false);
 
 // ══ CLOCK & STATUS ══════════════════════════════════════════
-function setS(m){document.getElementById('st').textContent=String(m).toUpperCase();}
+function setS(m){const e=document.getElementById('st');e.innerHTML='';e.textContent=String(m).toUpperCase();}
 function tick(){
   const n=new Date();
   document.getElementById('clk').textContent=
