@@ -390,7 +390,7 @@ body.emu-focus .c64foot { font-size: 10px; }
 
 <div id="top">
   <div class="logo"><span class="star">&#x2605;</span>&#x20;C64 DISK MANAGER&#x20;<span class="star">&#x2605;</span></div>
-  <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--c64bord);letter-spacing:1px">V3.9</span>
+  <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--c64bord);letter-spacing:1px">V4.0</span>
   <span class="hint">LOAD FOLDER &#x2192; SELECT .D64 &#x2192; CLICK FILE TO RUN</span>
   <span id="clk"></span>
 </div>
@@ -1187,6 +1187,9 @@ if (isMobile() && screen.orientation && screen.orientation.lock) {
 // ══ FOCUS-BASED LAYOUT ══════════════════════════════════════
 function setFocus(mode) {
   document.body.classList.remove('emu-focus', 'browse-focus');
+  // Clear inline widths set by resizer so CSS classes take effect
+  document.getElementById('lp').style.width = '';
+  document.getElementById('mp').style.width = '';
   if (mode) document.body.classList.add(mode);
 }
 
