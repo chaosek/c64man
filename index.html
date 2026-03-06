@@ -85,8 +85,8 @@ body { background:#080810; display:flex; flex-direction:column; }
 @media (max-width: 900px) {
   #rz1, #rz2 { display:none; }
   .hint { display:none; }
-  #lp { width:20% !important; min-width:unset; }
-  #mp { width:30% !important; min-width:unset; }
+  #lp { width:20%; min-width:unset; }
+  #mp { width:30%; min-width:unset; }
   #rp { flex:1; min-width:0; }
   #top { height:26px; }
   #bot { height:22px; }
@@ -117,12 +117,12 @@ body { background:#080810; display:flex; flex-direction:column; }
 .c64foot  { transition: font-size .3s ease; }
 
 /* BROWSE mode (default) — side panels wide */
-body.browse-focus #lp { width: 460px !important; }
-body.browse-focus #mp { width: 580px !important; }
+body.browse-focus #lp { width: 460px; }
+body.browse-focus #mp { width: 580px; }
 
 /* PLAY mode — side panels shrink, emulator gets space */
-body.emu-focus #lp { width: 160px !important; }
-body.emu-focus #mp { width: 200px !important; }
+body.emu-focus #lp { width: 160px; }
+body.emu-focus #mp { width: 200px; }
 body.emu-focus #c64s { font-size: 13px; line-height: 14px; padding: 8px 10px; }
 body.emu-focus .dl { line-height: 14px; }
 body.emu-focus .c64hdr { font-size: 10px; }
@@ -390,7 +390,7 @@ body.emu-focus .c64foot { font-size: 10px; }
 
 <div id="top">
   <div class="logo"><span class="star">&#x2605;</span>&#x20;C64 DISK MANAGER&#x20;<span class="star">&#x2605;</span></div>
-  <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--c64bord);letter-spacing:1px">V4.1</span>
+  <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--c64bord);letter-spacing:1px">V4.2</span>
   <span class="hint">LOAD FOLDER &#x2192; SELECT .D64 &#x2192; CLICK FILE TO RUN</span>
   <span id="clk"></span>
 </div>
@@ -1187,18 +1187,18 @@ if (isMobile() && screen.orientation && screen.orientation.lock) {
   screen.orientation.lock('landscape').catch(()=>{});
 }
 
-// ══ FOCUS-BASED LAYOUT ══════════════════════════════════════
+// Start in browse mode — different sizes for mobile vs desktop
 function setFocus(mode) {
   const lp = document.getElementById('lp');
   const mp = document.getElementById('mp');
   document.body.classList.remove('emu-focus', 'browse-focus');
   if (mode === 'emu-focus') {
-    lp.style.width = '160px';
-    mp.style.width = '200px';
+    lp.style.width = isMobile() ? '18%'  : '160px';
+    mp.style.width = isMobile() ? '22%'  : '200px';
     document.body.classList.add('emu-focus');
   } else {
-    lp.style.width = '460px';
-    mp.style.width = '580px';
+    lp.style.width = isMobile() ? '20%'  : '460px';
+    mp.style.width = isMobile() ? '30%'  : '580px';
     document.body.classList.add('browse-focus');
   }
 }
@@ -1207,7 +1207,6 @@ function setFocus(mode) {
 document.getElementById('lp').addEventListener('click', () => setFocus('browse-focus'));
 document.getElementById('mp').addEventListener('click', () => setFocus('browse-focus'));
 
-// Start in browse mode
 setFocus('browse-focus');
 
 // Back button → return to browse
