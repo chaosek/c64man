@@ -383,7 +383,7 @@ body { background:#080810; display:flex; flex-direction:column; }
 
 <div id="top">
   <div class="logo"><span class="star">&#x2605;</span>&#x20;C64 DISK MANAGER&#x20;<span class="star">&#x2605;</span></div>
-  <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--c64bord);letter-spacing:1px">V3.0</span>
+  <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--c64bord);letter-spacing:1px">V3.1</span>
   <span class="hint">LOAD FOLDER &#x2192; SELECT .D64 &#x2192; CLICK FILE TO RUN</span>
   <span id="clk"></span>
 </div>
@@ -837,17 +837,24 @@ function launchEmulator(entry) {
   document.getElementById('prev-info').textContent =
     (isFirst ? 'D64 · FULL DISK' : 'PRG · ' + entry.blocks + ' BLK');
 
-  // Always create a brand new iframe — most reliable way to reset on Android
+  // Kill old iframe completely before creating new one
   const old = document.getElementById('emu-frame');
+  try {
+    // Navigate to blank first to stop WASM and free memory
+    old.contentWindow.location.href = 'about:blank';
+  } catch(e) {}
+
   const frame = document.createElement('iframe');
   frame.id = 'emu-frame';
   frame.style.cssText = 'display:block;width:100%;height:100%;border:none;';
-  old.parentNode.replaceChild(frame, old);
 
-  // srcdoc on next tick so browser registers the new element first
-  requestAnimationFrame(() => requestAnimationFrame(() => {
-    frame.srcdoc = buildSrcdoc(gameUrl, gameName);
-  }));
+  // Wait for old iframe to blank out, then replace
+  setTimeout(() => {
+    old.parentNode.replaceChild(frame, old);
+    requestAnimationFrame(() => {
+      frame.srcdoc = buildSrcdoc(gameUrl, gameName);
+    });
+  }, 200);
 }
 
 function emuMsg(msg, isErr) {
@@ -1170,7 +1177,6 @@ function freshEmuFrame() {
 function mobBrowse() {
   document.body.classList.remove('mob-play');
   document.body.classList.add('mob-browse');
-  // Hide and nuke iframe content
   const frame = document.getElementById('emu-frame');
   frame.style.display = 'none';
   frame.removeAttribute('srcdoc');
