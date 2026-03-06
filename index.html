@@ -108,291 +108,13 @@ body { background:#080810; display:flex; flex-direction:column; }
 /* Back button — hidden, no longer needed */
 #mob-back { display:none !important; }
 
-/* ── FOCUS-BASED LAYOUT — defined later after panel rules ── */
-
-/* ── LEFT PANEL — C64 PETSCII style ── */
-#lp {
-  width:340px; min-width:140px; display:flex; flex-direction:column;
-  background:var(--c64bg); overflow:hidden; flex-shrink:0; position:relative;
-}
-#lp::before {
-  content:''; position:absolute; inset:0; pointer-events:none; z-index:5;
-  background:repeating-linear-gradient(
-    0deg, transparent, transparent 3px, var(--scan) 3px, var(--scan) 4px);
-}
-
-/* shared C64 font shorthand */
-.c64f {
-  font-family:'Share Tech Mono',monospace;
-  font-size:16px; line-height:18px; font-weight:700;
-  letter-spacing:.5px; text-transform:uppercase;
-}
-
-
-
-/* drop zone */
-#dz {
-  flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
-  gap:6px; cursor:pointer; color:var(--c64txt);
-  font-family:'Share Tech Mono',monospace; font-size:16px; font-weight:700;
-  letter-spacing:2px; text-transform:uppercase; position:relative; z-index:2;
-}
-#dz:hover, #dz.on { background:rgba(112,112,232,.08); }
-#dz .di { font-size:28px; opacity:.35; margin-bottom:4px; }
-#dz .dt { color:var(--c64white); }
-#dz .ds { font-size:11px; color:var(--c64txt); letter-spacing:1px; }
-
-/* toolbar */
-#tb {
-  height:22px; background:var(--c64dark); border-bottom:1px solid var(--c64bord);
-  display:none; align-items:center; padding:0 4px; gap:3px; flex-shrink:0; z-index:6;
-}
-.tbb {
-  height:16px; padding:0 6px;
-  background:var(--c64bg); border:1px solid var(--c64bord);
-  color:var(--c64txt); font-family:'Share Tech Mono',monospace;
-  font-size:10px; font-weight:700; letter-spacing:1px;
-  text-transform:uppercase; cursor:pointer;
-}
-.tbb:hover { background:var(--c64invbg); color:var(--c64invfg); }
-.tfl {
-  flex:1; height:16px;
-  background:var(--c64dark); border:1px solid var(--c64bord);
-  color:var(--c64white); font-family:'Share Tech Mono',monospace;
-  font-size:12px; font-weight:700; letter-spacing:1px;
-  text-transform:uppercase; padding:0 5px; outline:none;
-}
-.tfl::placeholder { color:var(--c64bord); }
-.tfl:focus { border-color:var(--c64white); }
-
-/* file tree */
-#tw { flex:1; overflow-y:auto; overflow-x:hidden; display:none; position:relative; z-index:2; }
-.tn {
-  display:flex; align-items:center; height:18px;
-  padding-left:4px; padding-right:4px;
-  cursor:pointer; user-select:none; white-space:nowrap;
-}
-.tn:hover { background:rgba(112,112,232,.18); }
-.tn.sel   { background:var(--c64invbg); }
-.tn.sel .nn { color:var(--c64invfg); }
-
-.ntog { width:14px; flex-shrink:0; text-align:center;
-        font-family:'Share Tech Mono',monospace; font-size:14px; font-weight:700;
-        color:var(--c64txt); }
-.nn   { font-family:'Share Tech Mono',monospace; font-size:16px; line-height:18px;
-        font-weight:700; letter-spacing:.5px; text-transform:uppercase;
-        flex:1; overflow:hidden; text-overflow:ellipsis; color:var(--c64txt); }
-.nn.fld { color:var(--c64white); }
-.nn.d64 { color:var(--c64cyan); }
-.nn.fil { color:var(--c64txt); }
-.tn.sel .nn.fld,
-.tn.sel .nn.d64,
-.tn.sel .nn.fil { color:var(--c64invfg); }
-.nsz  { font-family:'Share Tech Mono',monospace; font-size:11px;
-        color:var(--c64bord); flex-shrink:0; margin-left:4px; }
-
-/* footer */
-.pfoot {
-  height:18px; background:var(--c64dark); border-top:1px solid var(--c64bord);
-  display:flex; align-items:center; padding:0 8px; gap:14px;
-  flex-shrink:0; z-index:6;
-  font-family:'Share Tech Mono',monospace; font-size:11px; font-weight:700;
-  color:var(--c64txt); text-transform:uppercase; letter-spacing:1px;
-}
-.pfoot b { color:var(--c64white); font-weight:700; }
-
-#tw::-webkit-scrollbar       { width:6px; }
-#tw::-webkit-scrollbar-track { background:var(--c64dark); }
-#tw::-webkit-scrollbar-thumb { background:var(--c64bord); }
-
-/* ── RESIZERS ── */
-.rz {
-  width:3px; background:var(--c64bord); cursor:col-resize; flex-shrink:0;
-  transition:background .15s;
-}
-.rz:hover, .rz.on { background:var(--c64white); }
-#rz1 { border-left:1px solid var(--c64bord); border-right:1px solid var(--c64bord); }
-#rz2 { border-left:1px solid var(--c64bord); border-right:1px solid var(--c64bord); }
-
-/* ── MIDDLE PANEL — C64 emulator ── */
-#rp {
-  flex:1; display:flex; flex-direction:column;
-  background:var(--c64bg); overflow:hidden; position:relative;
-}
-/* ── RIGHT PANEL — C64 directory ── */
-#mp {
-  width:420px; min-width:180px; display:flex; flex-direction:column;
-  background:var(--c64bg); overflow:hidden; flex-shrink:0; position:relative;
-}
-
-/* CRT scanlines on both C64 panels */
-#mp::before, #rp::before {
-  content:''; position:absolute; inset:0; pointer-events:none; z-index:5;
-  background:repeating-linear-gradient(
-    0deg, transparent, transparent 3px, var(--scan) 3px, var(--scan) 4px);
-}
-#mp::after, #rp::after {
-  content:''; position:absolute; inset:0; pointer-events:none; z-index:4;
-  background:radial-gradient(ellipse 90% 80% at 50% 44%,
-    rgba(60,60,200,.04) 0%, rgba(0,0,18,.18) 100%);
-}
-
-.c64hdr {
-  height:18px; background:var(--c64dark); color:var(--c64white);
-  display:flex; align-items:center; padding:0 8px; gap:8px;
-  border-bottom:1px solid var(--c64bord); flex-shrink:0; z-index:6;
-  font-family:'Share Tech Mono',monospace; text-transform:uppercase;
-  letter-spacing:1px; font-size:12px; font-weight:700;
-}
-.c64hdr-t { flex:1; color:var(--c64white); }
-.c64hdr-s { font-size:10px; color:var(--c64txt); letter-spacing:1px; }
-
-/* Directory listing */
-#c64s {
-  flex:1; overflow-y:auto; overflow-x:hidden;
-  padding:18px 22px 24px;
-  position:relative; z-index:2;
-  font-family:'Share Tech Mono',monospace;
-  font-size:20px; line-height:20px; font-weight:700;
-  letter-spacing:.5px; color:var(--c64txt);
-  text-transform:uppercase; white-space:pre;
-}
-#c64e {
-  height:100%; display:flex; flex-direction:column;
-  align-items:center; justify-content:center; gap:14px;
-  color:rgba(55,55,175,.4); font-size:12px; letter-spacing:3px;
-  pointer-events:none;
-}
-.c64e-ico { font-size:40px; opacity:.28; }
-
-/* Directory lines */
-.dl { display:block; line-height:20px; white-space:pre; cursor:default; }
-.dl.entry { cursor:pointer; }
-.dl.entry:hover { background:rgba(200,200,255,.1); }
-.dl.entry.copied { background:rgba(56,208,128,.15); }
-.rv     { background:var(--c64invbg); color:var(--c64invfg); }
-.d-blk  { color:var(--c64white); display:inline-block; }
-.d-fn   { color:var(--c64white); }
-.d-id   { color:var(--c64white); }
-.t-prg  { color:var(--c64cyan);  }
-.t-seq  { color:var(--c64green); }
-.t-rel  { color:var(--c64yel);   }
-.t-usr  { color:var(--c64mag);   }
-.t-dir  { color:var(--c64yel);   }
-.t-del  { color:rgba(180,180,255,.18); }
-.t-cbm  { color:var(--c64mag);   }
-.t-nc   { color:var(--c64red);   }
-.t-lk   { color:var(--c64yel);   }
-.d-free { color:var(--c64white); }
-.cur    { display:inline-block; width:12px; height:18px;
-          background:var(--c64txt); vertical-align:text-bottom;
-          animation:blink 1s step-end infinite; }
-@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
-
-.c64foot {
-  height:22px; background:var(--c64dark); border-top:1px solid var(--c64bord);
-  display:flex; align-items:center; padding:0 12px; gap:18px;
-  flex-shrink:0; z-index:6;
-  font-family:'Share Tech Mono',monospace; font-size:11px;
-  color:var(--c64txt); text-transform:uppercase; letter-spacing:1px;
-}
-.c64foot b { color:var(--c64white); font-weight:normal; }
-
-#c64s::-webkit-scrollbar       { width:7px; }
-#c64s::-webkit-scrollbar-track { background:var(--c64dark); }
-#c64s::-webkit-scrollbar-thumb { background:var(--c64bord); }
-
-/* Preview panel */
-#prev-body {
-  flex:1; overflow:hidden; padding:0;
-  background:var(--c64bg); position:relative; z-index:2;
-}
-#prev-empty {
-  display:flex; flex-direction:column; align-items:center; justify-content:center;
-  gap:12px; color:rgba(60,60,175,.4);
-  font-family:'Share Tech Mono',monospace; font-size:11px;
-  letter-spacing:3px; text-transform:uppercase; width:100%; flex:1;
-}
-#emu-placeholder {
-  position:absolute; inset:0;
-  display:flex; flex-direction:column; align-items:center; justify-content:center;
-  gap:12px; color:rgba(60,60,175,.4);
-  font-family:'Share Tech Mono',monospace; font-size:11px;
-  letter-spacing:3px; text-transform:uppercase;
-  background:var(--c64bg);
-}
-/* EmulatorJS iframe */
-#emu-frame {
-  position:absolute; inset:0;
-  width:100% !important; height:100% !important;
-  border:none;
-}
-#prev-canvas {
-  image-rendering:pixelated; image-rendering:crisp-edges;
-  display:none; border:2px solid var(--c64bord);
-}
-.prev-info {
-  position:absolute; bottom:6px; right:10px;
-  font-family:'Share Tech Mono',monospace; font-size:10px;
-  color:rgba(80,80,180,.45); letter-spacing:1px; text-transform:uppercase;
-  z-index:3;
-}
-
-/* ── BOTTOM BAR ── */
-#bot {
-  height:20px; background:var(--c64dark); border-top:1px solid var(--c64bord);
-  display:flex; align-items:center; padding:0 10px; gap:16px; flex-shrink:0;
-}
-.bk  { font-family:'Share Tech Mono',monospace; font-size:10px; font-weight:700;
-       background:var(--c64invbg); color:var(--c64invfg);
-       padding:0 4px; margin-right:3px; letter-spacing:1px; }
-.bl  { font-family:'Share Tech Mono',monospace; font-size:10px; font-weight:700;
-       color:var(--c64txt); letter-spacing:1px; text-transform:uppercase; }
-.bsp { flex:1; }
-#st  { font-family:'Share Tech Mono',monospace; font-size:10px; font-weight:700;
-       color:var(--c64txt); letter-spacing:1px; text-transform:uppercase; }
-
-/* ── COPY TOAST ── */
-#toast {
-  position:fixed; bottom:40px; left:50%;
-  transform:translateX(-50%) translateY(16px);
-  background:var(--c64dark); border:1px solid var(--c64white); color:var(--c64white);
-  font-family:'Share Tech Mono',monospace; font-size:11px;
-  letter-spacing:2px; text-transform:uppercase;
-  padding:7px 18px; border-radius:4px;
-  opacity:0; transition:opacity .25s, transform .25s;
-  z-index:999; pointer-events:none; max-width:80vw;
-  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-}
-#toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
-
-/* ── FOCUS-BASED LAYOUT ── */
-#lp, #mp { transition: width .3s ease; }
-#c64s     { transition: font-size .3s ease, line-height .3s ease, padding .3s ease; }
-.dl       { transition: line-height .3s ease; }
-.nn       { transition: font-size .3s ease, line-height .3s ease; }
-.c64hdr   { transition: font-size .3s ease; }
-.c64foot  { transition: font-size .3s ease; }
-
-/* BROWSE mode — side panels wide */
-body.browse-focus #lp { width: 460px; }
-body.browse-focus #mp { width: 580px; }
-
-/* PLAY mode — side panels shrink */
-body.emu-focus #lp { width: 160px; }
-body.emu-focus #mp { width: 200px; }
-body.emu-focus #c64s { font-size: 13px; line-height: 14px; padding: 8px 10px; }
-body.emu-focus .dl { line-height: 14px; }
-body.emu-focus .c64hdr { font-size: 10px; }
-body.emu-focus .nn { font-size: 12px; line-height: 15px; }
-body.emu-focus .c64foot { font-size: 10px; }
 </style>
 </head>
 <body>
 
 <div id="top">
   <div class="logo"><span class="star">&#x2605;</span>&#x20;C64 DISK MANAGER&#x20;<span class="star">&#x2605;</span></div>
-  <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--c64bord);letter-spacing:1px">V4.4</span>
+  <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--c64bord);letter-spacing:1px">V4.6</span>
   <span class="hint">LOAD FOLDER &#x2192; SELECT .D64 &#x2192; CLICK FILE TO RUN</span>
   <span id="clk"></span>
 </div>
@@ -806,26 +528,6 @@ function buildSrcdoc(gameUrl, gameName) {
     '<style>*{margin:0;padding:0;box-sizing:border-box}' +
     'html,body{width:100%;height:100%;background:#000;overflow:hidden}' +
     '#game{width:100%;height:100%}
-/* ── FOCUS-BASED LAYOUT ── */
-#lp, #mp { transition: width .3s ease; }
-#c64s     { transition: font-size .3s ease, line-height .3s ease, padding .3s ease; }
-.dl       { transition: line-height .3s ease; }
-.nn       { transition: font-size .3s ease, line-height .3s ease; }
-.c64hdr   { transition: font-size .3s ease; }
-.c64foot  { transition: font-size .3s ease; }
-
-/* BROWSE mode — side panels wide */
-body.browse-focus #lp { width: 460px; }
-body.browse-focus #mp { width: 580px; }
-
-/* PLAY mode — side panels shrink */
-body.emu-focus #lp { width: 160px; }
-body.emu-focus #mp { width: 200px; }
-body.emu-focus #c64s { font-size: 13px; line-height: 14px; padding: 8px 10px; }
-body.emu-focus .dl { line-height: 14px; }
-body.emu-focus .c64hdr { font-size: 10px; }
-body.emu-focus .nn { font-size: 12px; line-height: 15px; }
-body.emu-focus .c64foot { font-size: 10px; }
 </style>' +
     '</head><body><div id="game"></div>' +
     '<script>\n' + js + '\n' + onStartJs + '\n<\/script>' +
@@ -1210,25 +912,28 @@ if (isMobile() && screen.orientation && screen.orientation.lock) {
   screen.orientation.lock('landscape').catch(()=>{});
 }
 
-// Start in browse mode — different sizes for mobile vs desktop
+// ══ FOCUS LAYOUT ════════════════════════════════════════════
+const _lp = document.getElementById('lp');
+const _mp = document.getElementById('mp');
+
 function setFocus(mode) {
-  const lp = document.getElementById('lp');
-  const mp = document.getElementById('mp');
-  // Clear any inline width from resizer before applying CSS class
-  lp.style.width = '';
-  mp.style.width = '';
-  document.body.classList.remove('emu-focus', 'browse-focus');
-  document.body.classList.add(mode);
+  _lp.style.transition = 'width .3s ease';
+  _mp.style.transition = 'width .3s ease';
+  if (mode === 'emu-focus') {
+    _lp.style.width = '160px';
+    _mp.style.width = '200px';
+  } else {
+    _lp.style.width = '460px';
+    _mp.style.width = '580px';
+  }
 }
 
-// Clicking either side panel → browse mode
-// Clicking either side panel → browse mode — but NOT on interactive elements
-document.getElementById('lp').addEventListener('click', (e) => {
-  if (e.target.closest('#dz,#tb,button,input')) return;
+_lp.addEventListener('click', (e) => {
+  if (e.target.closest('button, input')) return;
   setFocus('browse-focus');
 });
-document.getElementById('mp').addEventListener('click', (e) => {
-  if (e.target.closest('.dl.entry')) return; // entry click launches emu, don't override
+_mp.addEventListener('click', (e) => {
+  if (e.target.closest('.dl.entry')) return;
   setFocus('browse-focus');
 });
 
