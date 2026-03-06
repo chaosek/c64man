@@ -130,6 +130,16 @@ body { background:#080810; display:flex; flex-direction:column; }
   letter-spacing:.5px; text-transform:uppercase;
 }
 
+/* loading bar */
+#load-bar {
+  display:none; position:absolute; bottom:0; left:0; right:0; height:3px;
+  background:var(--c64dark); z-index:10;
+}
+#load-bar-fill {
+  height:100%; width:0; background:var(--c64cyan);
+  transition:width .1s linear;
+}
+
 /* drop zone */
 #dz {
   flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
@@ -380,6 +390,7 @@ body { background:#080810; display:flex; flex-direction:column; }
 
   <!-- PANEL 1: PC file tree — C64 PETSCII style -->
   <div id="lp">
+    <div id="load-bar"><div id="load-bar-fill"></div></div>
     <div id="dz">
       <div class="di">&#x1F4BE;</div>
       <div class="dt">LOAD FOLDER</div>
@@ -959,22 +970,26 @@ function loadD64(file, name) {
 // ══ PC FILE TREE ════════════════════════════════════════════
 let roots=[], expanded=new Set(), selNode=null, flatNodes=[];
 
+function decodePath(p) {
+  // Decode Android URI-encoded paths like primary%3ADocuments%2FD64
+  try { return decodeURIComponent(p.replace(/\+/g, ' ')); } catch(e) { return p; }
+}
+
 function buildTree(fileList) {
   const files = Array.from(fileList);
   if (!files.length) return [];
-  const _rootRaw = (files[0].webkitRelativePath || files[0].name).split('/')[0];
-  const rootName = (() => { try { return decodeURIComponent(_rootRaw.replace(/\+/g,' ')); } catch(e) { return _rootRaw; } })();
   const nm = {};
   const get = parts => {
     const key = parts.join('/');
-    const _rn = parts[parts.length-1];
-    const _dn = (() => { try { return decodeURIComponent(_rn.replace(/\+/g,' ')); } catch(e) { return _rn; } })();
-    if (!nm[key]) nm[key] = { path:key, name:_dn,
+    if (!nm[key]) nm[key] = { path:key, name:parts[parts.length-1],
       depth:parts.length-1, isFolder:false, isD64:false, children:[], size:0, file:null };
     return nm[key];
   };
   files.forEach(f => {
-    const parts = (f.webkitRelativePath || f.name).split('/');
+    // Decode the full path first, then split
+    const rawPath = f.webkitRelativePath || f.name;
+    const decoded = rawPath.split('/').map(decodePath);
+    const parts = decoded;
     for (let i=1; i<=parts.length; i++) {
       const n = get(parts.slice(0,i));
       if (i < parts.length) { n.isFolder = true; }
@@ -993,6 +1008,7 @@ function buildTree(fileList) {
     });
     ns.forEach(n=>n.children.length&&srt(n.children));
   }
+  const rootName = decodePath((files[0].webkitRelativePath || files[0].name).split('/')[0]);
   const rn = nm[rootName];
   if (!rn) return [];
   rn.isFolder=true; srt(rn.children); return [rn];
@@ -1051,18 +1067,31 @@ function countTree(nodes,s={f:0,d:0,x:0}){
 }
 
 function loadFolder(fl){
-  roots=buildTree(fl); expanded=new Set();
-  if(roots.length) expanded.add(roots[0].path);
-  document.getElementById('dz').style.display='none';
-  document.getElementById('tw').style.display='block';
-  document.getElementById('tb').style.display='flex';
-  const s=countTree(roots);
-  document.getElementById('pf').textContent=s.f;
-  document.getElementById('pd').textContent=s.d;
-  document.getElementById('px').textContent=s.x;
-  document.getElementById('pcpath').textContent=roots[0]?.name||'—';
-  renderTree();
-  setS(`Načteno: ${s.d} disket, ${s.f} složek`);
+  // Show loading bar
+  const bar  = document.getElementById('load-bar');
+  const fill = document.getElementById('load-bar-fill');
+  bar.style.display = 'block';
+  fill.style.width = '20%';
+
+  // Defer heavy work so browser can repaint the bar first
+  setTimeout(() => {
+    fill.style.width = '60%';
+    roots=buildTree(fl); expanded=new Set();
+    if(roots.length) expanded.add(roots[0].path);
+    document.getElementById('dz').style.display='none';
+    document.getElementById('tw').style.display='block';
+    document.getElementById('tb').style.display='flex';
+    const s=countTree(roots);
+    document.getElementById('pf').textContent=s.f;
+    document.getElementById('pd').textContent=s.d;
+    document.getElementById('px').textContent=s.x;
+    document.getElementById('pcpath').textContent=roots[0]?.name||'—';
+    fill.style.width = '90%';
+    renderTree();
+    setS(`Načteno: ${s.d} disket, ${s.f} složek`);
+    fill.style.width = '100%';
+    setTimeout(() => { bar.style.display='none'; fill.style.width='0'; }, 400);
+  }, 30);
 }
 
 // Folder open via input
