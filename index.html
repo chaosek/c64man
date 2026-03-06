@@ -129,7 +129,7 @@ body { background:var(--bg); display:flex; flex-direction:column; font-family:va
 .nsz { font-size:10px; color:var(--c64bord); flex-shrink:0; margin-left:4px; }
 
 /* MIDDLE PANEL - emulator */
-#ep { flex:1; min-width:0; transition:flex .3s ease; }
+#ep { flex:1 1 0; min-width:0; }
 
 #prev-body { flex:1; overflow:hidden; position:relative; z-index:2; }
 #emu-placeholder {
@@ -142,8 +142,8 @@ body { background:var(--bg); display:flex; flex-direction:column; font-family:va
 .prev-info { position:absolute; bottom:4px; right:8px; font-size:9px; color:rgba(80,80,180,.4); letter-spacing:1px; text-transform:uppercase; z-index:3; }
 
 /* RIGHT PANEL - directory — large, readable */
-#dp { width:420px; min-width:0; flex-shrink:1; transition:width .35s ease; overflow:hidden; }
-body.play-mode #dp { width:0 !important; min-width:0; }
+#dp { flex:0 0 420px; min-width:0; transition:flex-basis .35s ease; overflow:hidden; }
+body.play-mode #dp { flex-basis:0 !important; }
 body.play-mode #rz2 { display:none; }
 
 #c64s {
@@ -211,8 +211,8 @@ body.play-mode #rz2 { display:none; }
 @media (max-width:900px) {
   .rz { display:none !important; }
   #lp { width:160px !important; min-width:160px !important; max-width:160px !important; }
-  #dp { width:100% !important; }
-  body.play-mode #dp { width:0 !important; }
+  #dp { flex:0 0 calc(100% - 160px) !important; }
+  body.play-mode #dp { flex-basis:0 !important; }
   #ep { flex:1 !important; }
   #top { height:22px; }
   #bot { height:18px; }
@@ -233,7 +233,7 @@ body.play-mode #rz2 { display:none; }
 
 <div id="top">
   <div class="logo"><b>★</b> C64 DISK MANAGER <b>★</b></div>
-  <span id="ver">V1.4</span>
+  <span id="ver">V1.5</span>
   <span id="clk"></span>
 </div>
 
@@ -695,7 +695,8 @@ function makeResizer(rzId,el,invert){
   document.addEventListener('mousemove',e=>{
     if(!down)return;
     const delta=invert?(x0-e.clientX):(e.clientX-x0);
-    el.style.width=Math.max(120,Math.min(window.innerWidth-400,w0+delta))+'px';
+    const w=Math.max(160,Math.min(window.innerWidth-400,w0+delta));
+    el.style.flexBasis=w+'px';
   });
   document.addEventListener('mouseup',()=>{
     if(!down)return;down=false;rz.classList.remove('on');document.body.style.cssText='';
