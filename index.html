@@ -980,7 +980,7 @@ function buildTree(fileList) {
 
   // On mobile Android the path contains system prefixes like "primary:Documents/..."
   // Show flat list of D64 files only, grouped by folder name (last path segment before filename)
-  const isMob = window.innerWidth <= 700;
+  const isMob = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || window.innerWidth <= 900;
 
   const nm = {};
   const get = parts => {
@@ -1178,7 +1178,7 @@ function tick(){
 tick(); setInterval(tick,1000);
 
 // ══ MOBILE MODE SWITCHING ════════════════════════════════════
-const isMobile = () => window.innerWidth <= 700;
+const isMobile = () => /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || window.innerWidth <= 900;
 
 function mobBrowse() {
   document.body.classList.remove('mob-play');
