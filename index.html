@@ -75,52 +75,27 @@ body { background:#080810; display:flex; flex-direction:column; }
     position: absolute;
     top: 0;
     left: 100%;
-    /* No transition — instant rotation, no blink */
     transition: none;
   }
-  /* Hide body briefly during rotation to avoid flash */
-  body {
-    opacity: 0;
-    animation: fadeIn 0.15s ease 0.05s forwards;
-  }
+  body { opacity: 0; animation: fadeIn 0.15s ease 0.05s forwards; }
 }
 @keyframes fadeIn { to { opacity: 1; } }
 
-/* ── MOBILE LAYOUT — always landscape ── */
+/* ── MOBILE — three panels side by side, resizers hidden ── */
 @media (max-width: 900px) {
   #rz1, #rz2 { display:none; }
   .hint { display:none; }
-
-  /* BROWSE mode — two panels side by side */
-  body.mob-browse #ws { flex-direction: row; }
-  body.mob-browse #lp { width:40% !important; height:100%; min-width:unset;
-        border-right:1px solid var(--c64bord); border-bottom:none; flex-shrink:0; }
-  body.mob-browse #mp { flex:1; height:100%; min-width:unset; }
-  body.mob-browse #rp { display:none; }
-
-  /* PLAY mode — emulator fullscreen */
-  body.mob-play #lp { display:none; }
-  body.mob-play #mp { display:none; }
-  body.mob-play #rp { flex:1; width:100% !important; }
-  body.mob-play #top { display:none; }
-  body.mob-play #bot { display:none; }
-  body.mob-play #rp .c64hdr { display:none; }
-  body.mob-play #rp .prev-info { display:none; }
-  body.mob-play #rp #prev-body { position:absolute; inset:0; }
+  #lp { width:22% !important; min-width:unset; }
+  #mp { width:26% !important; min-width:unset; }
+  #rp { flex:1; }
+  #top { height:26px; }
+  #bot { height:22px; }
+  .logo { font-size:10px; letter-spacing:1px; }
+  .bk, .bl, #st { font-size:8px; }
 }
 
-/* Back button */
-#mob-back { display:none; }
-@media (max-width:900px) {
-  body.mob-play #mob-back {
-    display:flex; position:fixed; bottom:12px; right:12px; z-index:9999;
-    width:44px; height:44px; border-radius:50%;
-    background:var(--c64dark); border:2px solid var(--c64white);
-    color:var(--c64white); font-family:'Share Tech Mono',monospace;
-    font-size:18px; font-weight:700; align-items:center; justify-content:center;
-    cursor:pointer; box-shadow:0 2px 12px rgba(0,0,0,.6); opacity:0.7;
-  }
-}
+/* Back button — hidden, no longer needed */
+#mob-back { display:none !important; }
 
 /* ── LEFT PANEL — C64 PETSCII style ── */
 #lp {
@@ -226,15 +201,15 @@ body { background:#080810; display:flex; flex-direction:column; }
 #rz1 { border-left:1px solid var(--c64bord); border-right:1px solid var(--c64bord); }
 #rz2 { border-left:1px solid var(--c64bord); border-right:1px solid var(--c64bord); }
 
-/* ── MIDDLE PANEL — C64 directory ── */
-#mp {
-  width:520px; min-width:200px; display:flex; flex-direction:column;
-  background:var(--c64bg); overflow:hidden; flex-shrink:0; position:relative;
-}
-/* ── RIGHT PANEL — C64 preview ── */
+/* ── MIDDLE PANEL — C64 emulator ── */
 #rp {
   flex:1; display:flex; flex-direction:column;
   background:var(--c64bg); overflow:hidden; position:relative;
+}
+/* ── RIGHT PANEL — C64 directory ── */
+#mp {
+  width:420px; min-width:180px; display:flex; flex-direction:column;
+  background:var(--c64bg); overflow:hidden; flex-shrink:0; position:relative;
 }
 
 /* CRT scanlines on both C64 panels */
@@ -383,7 +358,7 @@ body { background:#080810; display:flex; flex-direction:column; }
 
 <div id="top">
   <div class="logo"><span class="star">&#x2605;</span>&#x20;C64 DISK MANAGER&#x20;<span class="star">&#x2605;</span></div>
-  <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--c64bord);letter-spacing:1px">V3.2</span>
+  <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--c64bord);letter-spacing:1px">V3.5</span>
   <span class="hint">LOAD FOLDER &#x2192; SELECT .D64 &#x2192; CLICK FILE TO RUN</span>
   <span id="clk"></span>
 </div>
@@ -417,7 +392,28 @@ body { background:#080810; display:flex; flex-direction:column; }
 
   <div class="rz" id="rz1"></div>
 
-  <!-- PANEL 2: C64 directory -->
+  <!-- PANEL 2: C64 emulator (EmulatorJS / vice_x64sc) -->
+  <div id="rp">
+    <div class="c64hdr">
+      <span class="c64hdr-t" id="prevtitle">*** VICE X64SC EMULATOR ***</span>
+      <span class="c64hdr-s" id="prevsub">CLICK FILE TO RUN</span>
+    </div>
+    <div id="prev-body">
+      <div id="emu-placeholder">
+        <span style="font-size:36px;opacity:.25">🕹️</span>
+        <span>KLIKNI NA SOUBOR V ADRESÁŘI</span>
+        <span style="font-size:10px;opacity:.4">SPUSTÍ VICE X64SC (EmulatorJS)</span>
+        <span style="font-size:9px;opacity:.25;margin-top:8px">vyžaduje internet · cdn.emulatorjs.org</span>
+      </div>
+      <!-- EmulatorJS se načte do tohoto iframe -->
+      <iframe id="emu-frame" style="display:none;width:100%;height:100%;border:none;"></iframe>
+      <div class="prev-info" id="prev-info"></div>
+    </div>
+  </div>
+
+  <div class="rz" id="rz2"></div>
+
+  <!-- PANEL 3: C64 directory -->
   <div id="mp">
     <div class="c64hdr">
       <span class="c64hdr-t" id="c64title">*** C64 DISK DIRECTORY ***</span>
@@ -436,27 +432,6 @@ body { background:#080810; display:flex; flex-direction:column; }
       <span>VOLNO: <b id="ff">0</b> BLK</span>
       <span style="flex:1"></span>
       <span>ID: <b id="fid">—</b></span>
-    </div>
-  </div>
-
-  <div class="rz" id="rz2"></div>
-
-  <!-- PANEL 3: C64 emulator (EmulatorJS / vice_x64sc) -->
-  <div id="rp">
-    <div class="c64hdr">
-      <span class="c64hdr-t" id="prevtitle">*** VICE X64SC EMULATOR ***</span>
-      <span class="c64hdr-s" id="prevsub">CLICK FILE TO RUN</span>
-    </div>
-    <div id="prev-body">
-      <div id="emu-placeholder">
-        <span style="font-size:36px;opacity:.25">🕹️</span>
-        <span>KLIKNI NA SOUBOR V ADRESÁŘI</span>
-        <span style="font-size:10px;opacity:.4">SPUSTÍ VICE X64SC (EmulatorJS)</span>
-        <span style="font-size:9px;opacity:.25;margin-top:8px">vyžaduje internet · cdn.emulatorjs.org</span>
-      </div>
-      <!-- EmulatorJS se načte do tohoto iframe -->
-      <iframe id="emu-frame" style="display:none;width:100%;height:100%;border:none;"></iframe>
-      <div class="prev-info" id="prev-info"></div>
     </div>
   </div>
 
@@ -831,8 +806,6 @@ function launchEmulator(entry) {
     gameName = fname + '.prg';
   }
 
-  if (isMobile()) mobPlay();
-
   document.getElementById('emu-placeholder').style.display = 'none';
   document.getElementById('prev-info').textContent =
     (isFirst ? 'D64 · FULL DISK' : 'PRG · ' + entry.blocks + ' BLK');
@@ -1139,7 +1112,7 @@ function makeResizer(rzId, leftEl, rightEl, invertDelta) {
   });
 }
 makeResizer('rz1', document.getElementById('lp'),  null, false);
-makeResizer('rz2', document.getElementById('mp'),  null, false);
+makeResizer('rz2', document.getElementById('mp'),  null, true);
 
 // ══ CLOCK & STATUS ══════════════════════════════════════════
 function setS(m){const e=document.getElementById('st');e.innerHTML='';e.textContent=String(m).toUpperCase();}
@@ -1150,32 +1123,7 @@ function tick(){
 }
 tick(); setInterval(tick,1000);
 
-// ══ SESSION RESTORE (after reload from mobBrowse) ═══════════
-(function() {
-  const savedDisk = sessionStorage.getItem('savedDisk');
-  const savedName = sessionStorage.getItem('savedDiskName') || 'disk.d64';
-  if (!savedDisk) return;
-  sessionStorage.removeItem('savedDisk');
-  sessionStorage.removeItem('savedDiskName');
-  try {
-    // Decode base64 back to ArrayBuffer
-    const bin = atob(savedDisk);
-    const buf = new ArrayBuffer(bin.length);
-    const bytes = new Uint8Array(buf);
-    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-    // Parse and restore disk
-    const info = parseD64(buf);
-    curDisk = info;
-    curDiskPath = savedName;
-    entries_ref = info.entries;
-    const name = savedName.split('/').pop();
-    renderDir(info, name);
-    setS(name + ' — ' + info.entries.length + ' souborů');
-    // Hide drop zone, show disk view
-    document.getElementById('dz').style.display = 'none';
-    document.getElementById('c64foot').style.display = 'flex';
-  } catch(e) { console.error('Session restore failed:', e); }
-})();
+
 
 // ══ MOBILE MODE SWITCHING ════════════════════════════════════
 const isMobile = () => /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || window.innerWidth <= 900;
@@ -1190,41 +1138,12 @@ function freshEmuFrame() {
 }
 
 function mobBrowse() {
-  // Save current disk to sessionStorage then reload to fully clear WASM memory
-  if (curDisk && curDisk.data) {
-    try {
-      // Convert Uint8Array to base64
-      const bytes = new Uint8Array(curDisk.data);
-      let bin = '';
-      bytes.forEach(b => bin += String.fromCharCode(b));
-      sessionStorage.setItem('savedDisk', btoa(bin));
-      sessionStorage.setItem('savedDiskName', curDiskPath || 'disk.d64');
-    } catch(e) {}
-  }
-  location.reload();
+  // No longer used — three panel layout always visible
 }
 
 function mobPlay() {
-  document.body.classList.remove('mob-browse');
-  document.body.classList.add('mob-play');
+  // No longer used — three panel layout always visible
 }
-
-// Init mobile mode on load
-function initMobMode() {
-  if (isMobile()) {
-    // Only set browse mode if not already in play mode
-    if (!document.body.classList.contains('mob-play')) {
-      document.body.classList.add('mob-browse');
-    }
-  } else {
-    // Desktop — remove mobile classes only if not playing
-    if (!document.body.classList.contains('mob-play')) {
-      document.body.classList.remove('mob-browse','mob-play');
-    }
-  }
-}
-initMobMode();
-window.addEventListener('resize', initMobMode);
 
 // Lock to landscape on mobile
 if (isMobile() && screen.orientation && screen.orientation.lock) {
