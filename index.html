@@ -85,13 +85,24 @@ body { background:#080810; display:flex; flex-direction:column; }
 @media (max-width: 900px) {
   #rz1, #rz2 { display:none; }
   .hint { display:none; }
-  #lp { width:22% !important; min-width:unset; }
-  #mp { width:26% !important; min-width:unset; }
-  #rp { flex:1; }
+  #lp { width:20% !important; min-width:unset; }
+  #mp { width:30% !important; min-width:unset; }
+  #rp { flex:1; min-width:0; }
   #top { height:26px; }
   #bot { height:22px; }
   .logo { font-size:10px; letter-spacing:1px; }
   .bk, .bl, #st { font-size:8px; }
+  /* Compact directory listing */
+  #c64s { padding:4px 6px; font-size:11px; line-height:14px; }
+  .dl { line-height:14px; }
+  .cur { width:8px; height:12px; }
+  .c64foot { font-size:9px; padding:0 4px; gap:6px; }
+  .c64hdr { font-size:9px; padding:0 4px; }
+  /* Hide block counts on mobile — save space */
+  .d-blk { display:none; }
+  .d-free { display:none; }
+  #prev-body { position:relative; flex:1; min-height:0; }
+  #emu-frame { position:absolute; inset:0; width:100% !important; height:100% !important; }
 }
 
 /* Back button — hidden, no longer needed */
@@ -358,7 +369,7 @@ body { background:#080810; display:flex; flex-direction:column; }
 
 <div id="top">
   <div class="logo"><span class="star">&#x2605;</span>&#x20;C64 DISK MANAGER&#x20;<span class="star">&#x2605;</span></div>
-  <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--c64bord);letter-spacing:1px">V3.5</span>
+  <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--c64bord);letter-spacing:1px">V3.7</span>
   <span class="hint">LOAD FOLDER &#x2192; SELECT .D64 &#x2192; CLICK FILE TO RUN</span>
   <span id="clk"></span>
 </div>
@@ -860,7 +871,7 @@ function renderDir(info, filename) {
       `<div class="dl entry" data-i="${i}">` +
       `<span class="d-blk">${blk} </span>` +
       `<span class="d-fn">"${E(fn)}" </span>` +
-      `${splat}<span class="${tc}">${E(e.type)}</span>${lock}` +
+      `${splat}<span class="d-type ${tc}">${E(e.type)}</span>${lock}` +
       `</div>`
     );
   });
