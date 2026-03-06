@@ -108,26 +108,7 @@ body { background:#080810; display:flex; flex-direction:column; }
 /* Back button — hidden, no longer needed */
 #mob-back { display:none !important; }
 
-/* ── FOCUS-BASED LAYOUT ── */
-#lp, #mp { transition: width .3s ease; }
-#c64s     { transition: font-size .3s ease, line-height .3s ease, padding .3s ease; }
-.dl       { transition: line-height .3s ease; }
-.nn       { transition: font-size .3s ease, line-height .3s ease; }
-.c64hdr   { transition: font-size .3s ease; }
-.c64foot  { transition: font-size .3s ease; }
-
-/* BROWSE mode (default) — side panels wide */
-body.browse-focus #lp { width: 460px; }
-body.browse-focus #mp { width: 580px; }
-
-/* PLAY mode — side panels shrink, emulator gets space */
-body.emu-focus #lp { width: 160px; }
-body.emu-focus #mp { width: 200px; }
-body.emu-focus #c64s { font-size: 13px; line-height: 14px; padding: 8px 10px; }
-body.emu-focus .dl { line-height: 14px; }
-body.emu-focus .c64hdr { font-size: 10px; }
-body.emu-focus .nn { font-size: 12px; line-height: 15px; }
-body.emu-focus .c64foot { font-size: 10px; }
+/* ── FOCUS-BASED LAYOUT — defined later after panel rules ── */
 
 /* ── LEFT PANEL — C64 PETSCII style ── */
 #lp {
@@ -384,13 +365,34 @@ body.emu-focus .c64foot { font-size: 10px; }
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
 }
 #toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+/* ── FOCUS-BASED LAYOUT ── */
+#lp, #mp { transition: width .3s ease; }
+#c64s     { transition: font-size .3s ease, line-height .3s ease, padding .3s ease; }
+.dl       { transition: line-height .3s ease; }
+.nn       { transition: font-size .3s ease, line-height .3s ease; }
+.c64hdr   { transition: font-size .3s ease; }
+.c64foot  { transition: font-size .3s ease; }
+
+/* BROWSE mode — side panels wide */
+body.browse-focus #lp { width: 460px; }
+body.browse-focus #mp { width: 580px; }
+
+/* PLAY mode — side panels shrink */
+body.emu-focus #lp { width: 160px; }
+body.emu-focus #mp { width: 200px; }
+body.emu-focus #c64s { font-size: 13px; line-height: 14px; padding: 8px 10px; }
+body.emu-focus .dl { line-height: 14px; }
+body.emu-focus .c64hdr { font-size: 10px; }
+body.emu-focus .nn { font-size: 12px; line-height: 15px; }
+body.emu-focus .c64foot { font-size: 10px; }
 </style>
 </head>
 <body>
 
 <div id="top">
   <div class="logo"><span class="star">&#x2605;</span>&#x20;C64 DISK MANAGER&#x20;<span class="star">&#x2605;</span></div>
-  <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--c64bord);letter-spacing:1px">V4.2</span>
+  <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--c64bord);letter-spacing:1px">V4.3</span>
   <span class="hint">LOAD FOLDER &#x2192; SELECT .D64 &#x2192; CLICK FILE TO RUN</span>
   <span id="clk"></span>
 </div>
@@ -803,7 +805,28 @@ function buildSrcdoc(gameUrl, gameName) {
   return '<!DOCTYPE html><html><head><meta charset="UTF-8">' +
     '<style>*{margin:0;padding:0;box-sizing:border-box}' +
     'html,body{width:100%;height:100%;background:#000;overflow:hidden}' +
-    '#game{width:100%;height:100%}</style>' +
+    '#game{width:100%;height:100%}
+/* ── FOCUS-BASED LAYOUT ── */
+#lp, #mp { transition: width .3s ease; }
+#c64s     { transition: font-size .3s ease, line-height .3s ease, padding .3s ease; }
+.dl       { transition: line-height .3s ease; }
+.nn       { transition: font-size .3s ease, line-height .3s ease; }
+.c64hdr   { transition: font-size .3s ease; }
+.c64foot  { transition: font-size .3s ease; }
+
+/* BROWSE mode — side panels wide */
+body.browse-focus #lp { width: 460px; }
+body.browse-focus #mp { width: 580px; }
+
+/* PLAY mode — side panels shrink */
+body.emu-focus #lp { width: 160px; }
+body.emu-focus #mp { width: 200px; }
+body.emu-focus #c64s { font-size: 13px; line-height: 14px; padding: 8px 10px; }
+body.emu-focus .dl { line-height: 14px; }
+body.emu-focus .c64hdr { font-size: 10px; }
+body.emu-focus .nn { font-size: 12px; line-height: 15px; }
+body.emu-focus .c64foot { font-size: 10px; }
+</style>' +
     '</head><body><div id="game"></div>' +
     '<script>\n' + js + '\n' + onStartJs + '\n<\/script>' +
     '<script src="https://cdn.emulatorjs.org/stable/data/loader.js"><\/script>' +
@@ -1191,16 +1214,11 @@ if (isMobile() && screen.orientation && screen.orientation.lock) {
 function setFocus(mode) {
   const lp = document.getElementById('lp');
   const mp = document.getElementById('mp');
+  // Clear any inline width from resizer before applying CSS class
+  lp.style.width = '';
+  mp.style.width = '';
   document.body.classList.remove('emu-focus', 'browse-focus');
-  if (mode === 'emu-focus') {
-    lp.style.width = isMobile() ? '18%'  : '160px';
-    mp.style.width = isMobile() ? '22%'  : '200px';
-    document.body.classList.add('emu-focus');
-  } else {
-    lp.style.width = isMobile() ? '20%'  : '460px';
-    mp.style.width = isMobile() ? '30%'  : '580px';
-    document.body.classList.add('browse-focus');
-  }
+  document.body.classList.add(mode);
 }
 
 // Clicking either side panel → browse mode
