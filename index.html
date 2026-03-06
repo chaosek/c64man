@@ -64,6 +64,20 @@ body { background:#080810; display:flex; flex-direction:column; }
 /* ── WORKSPACE ── */
 #ws { flex:1; display:flex; overflow:hidden; min-height:0; }
 
+/* ── FORCE LANDSCAPE VIA CSS ROTATION ── */
+@media (max-width: 900px) and (orientation: portrait) {
+  html {
+    transform: rotate(90deg);
+    transform-origin: left top;
+    width: 100vh;
+    height: 100vw;
+    overflow: hidden;
+    position: absolute;
+    top: 0;
+    left: 100%;
+  }
+}
+
 /* ── MOBILE LAYOUT — always landscape ── */
 @media (max-width: 900px) {
   #rz1, #rz2 { display:none; }
@@ -358,7 +372,7 @@ body { background:#080810; display:flex; flex-direction:column; }
 
 <div id="top">
   <div class="logo"><span class="star">&#x2605;</span>&#x20;C64 DISK MANAGER&#x20;<span class="star">&#x2605;</span></div>
-  <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--c64bord);letter-spacing:1px">V1.8</span>
+  <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--c64bord);letter-spacing:1px">V1.9</span>
   <span class="hint">LOAD FOLDER &#x2192; SELECT .D64 &#x2192; CLICK FILE TO RUN</span>
   <span id="clk"></span>
 </div>
@@ -882,7 +896,6 @@ function renderDir(info, filename) {
     const entry = entries[+el.dataset.i];
     el.addEventListener('click', () => {
       launchEmulator(entry);
-      copyViceCmd(entry);
     });
   });
 
@@ -1131,10 +1144,12 @@ const isMobile = () => /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAge
 function mobBrowse() {
   document.body.classList.remove('mob-play');
   document.body.classList.add('mob-browse');
-  // Clear emulator to free memory
+  // Fully reset iframe — replace with fresh one so next srcdoc assignment works
   const frame = document.getElementById('emu-frame');
-  frame.srcdoc = '';
-  frame.style.display = 'none';
+  const newFrame = document.createElement('iframe');
+  newFrame.id = 'emu-frame';
+  newFrame.style.cssText = 'display:none;width:100%;height:100%;border:none;';
+  frame.parentNode.replaceChild(newFrame, frame);
   document.getElementById('emu-placeholder').style.display = 'flex';
   if (emuBlobUrl)  { URL.revokeObjectURL(emuBlobUrl);  emuBlobUrl  = null; }
   if (emuBlobUrl2) { URL.revokeObjectURL(emuBlobUrl2); emuBlobUrl2 = null; }
