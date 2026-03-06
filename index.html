@@ -142,8 +142,8 @@ body { background:var(--bg); display:flex; flex-direction:column; font-family:va
 .prev-info { position:absolute; bottom:4px; right:8px; font-size:9px; color:rgba(80,80,180,.4); letter-spacing:1px; text-transform:uppercase; z-index:3; }
 
 /* RIGHT PANEL - directory — large, readable */
-#dp { width:420px; min-width:160px; transition:width .35s ease; overflow:hidden; }
-body.play-mode #dp { width:0 !important; min-width:0; padding:0; border:none; }
+#dp { width:420px; min-width:0; flex-shrink:1; transition:width .35s ease; overflow:hidden; }
+body.play-mode #dp { width:0 !important; min-width:0; }
 body.play-mode #rz2 { display:none; }
 
 #c64s {
@@ -233,7 +233,7 @@ body.play-mode #rz2 { display:none; }
 
 <div id="top">
   <div class="logo"><b>★</b> C64 DISK MANAGER <b>★</b></div>
-  <span id="ver">V1.3</span>
+  <span id="ver">V1.4</span>
   <span id="clk"></span>
 </div>
 
@@ -506,13 +506,18 @@ function launchEmulator(entry){
   // play mode — pravý panel zmizí, emulator zabere vše
   document.body.classList.add('play-mode');
 
-  // always fresh iframe
+  // vždy čistý iframe — nejdřív about:blank, pak srcdoc
   const old=document.getElementById('emu-frame');
   const frame=document.createElement('iframe');
   frame.id='emu-frame';
   frame.style.cssText='position:absolute;inset:0;width:100%!important;height:100%!important;border:none;display:block;';
+  frame.src='about:blank';
   old.parentNode.replaceChild(frame,old);
-  setTimeout(()=>{frame.srcdoc=buildSrcdoc(gameUrl,gameName);},50);
+  const srcdoc=buildSrcdoc(gameUrl,gameName);
+  setTimeout(()=>{
+    frame.removeAttribute('src');
+    frame.srcdoc=srcdoc;
+  },150);
 }
 
 // ══ DIRECTORY RENDERER ══════════════════════════════════════════
