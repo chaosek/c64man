@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="screen-orientation" content="landscape">
 <meta name="theme-color" content="#18186a">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -63,53 +64,37 @@ body { background:#080810; display:flex; flex-direction:column; }
 /* ── WORKSPACE ── */
 #ws { flex:1; display:flex; overflow:hidden; min-height:0; }
 
-/* ── MOBILE LAYOUT ── */
-@media (max-width: 700px) {
+/* ── MOBILE LAYOUT — always landscape ── */
+@media (max-width: 900px) {
   #rz1, #rz2 { display:none; }
-  #top { height:30px; }
-  #bot { height:24px; }
-  .bk, .bl, #st { font-size:9px; }
-  .logo { font-size:11px; letter-spacing:2px; }
   .hint { display:none; }
-  .nn { font-size:14px; line-height:20px; }
-  .tn { height:28px; }
-  #c64s { font-size:16px; line-height:20px; padding:10px 12px; }
-  .dl { line-height:22px; }
 
-  /* BROWSE mode — show file tree + disk directory, hide emulator */
-  body.mob-browse #ws { flex-direction: column; }
-  body.mob-browse #lp { width:100% !important; height:45%; min-width:unset;
-        border-right:none; border-bottom:1px solid var(--c64bord); flex-shrink:0; }
-  body.mob-browse #mp { width:100% !important; flex:1; min-width:unset; }
+  /* BROWSE mode — two panels side by side */
+  body.mob-browse #ws { flex-direction: row; }
+  body.mob-browse #lp { width:40% !important; height:100%; min-width:unset;
+        border-right:1px solid var(--c64bord); border-bottom:none; flex-shrink:0; }
+  body.mob-browse #mp { flex:1; height:100%; min-width:unset; }
   body.mob-browse #rp { display:none; }
 
-  /* PLAY mode — show only emulator fullscreen */
-  body.mob-play #ws { flex-direction: column; }
+  /* PLAY mode — emulator fullscreen */
   body.mob-play #lp { display:none; }
   body.mob-play #mp { display:none; }
   body.mob-play #rp { flex:1; width:100% !important; }
+  body.mob-play #top { display:none; }
   body.mob-play #bot { display:none; }
 }
 
-/* Back button — only visible in mobile play mode */
-#mob-back {
-  display:none;
-}
-@media (max-width:700px) {
+/* Back button */
+#mob-back { display:none; }
+@media (max-width:900px) {
   body.mob-play #mob-back {
-    display:flex; position:fixed; bottom:16px; right:16px; z-index:9999;
-    width:52px; height:52px; border-radius:50%;
+    display:flex; position:fixed; bottom:12px; right:12px; z-index:9999;
+    width:44px; height:44px; border-radius:50%;
     background:var(--c64dark); border:2px solid var(--c64white);
     color:var(--c64white); font-family:'Share Tech Mono',monospace;
-    font-size:20px; font-weight:700; align-items:center; justify-content:center;
-    cursor:pointer; box-shadow:0 2px 12px rgba(0,0,0,.6);
+    font-size:18px; font-weight:700; align-items:center; justify-content:center;
+    cursor:pointer; box-shadow:0 2px 12px rgba(0,0,0,.6); opacity:0.7;
   }
-}
-
-@media (max-width:700px) and (orientation:landscape) {
-  body.mob-browse #ws { flex-direction: row; }
-  body.mob-browse #lp { width:40% !important; height:100%; border-right:1px solid var(--c64bord); border-bottom:none; }
-  body.mob-browse #mp { width:60% !important; flex:unset; height:100%; }
 }
 
 /* ── LEFT PANEL — C64 PETSCII style ── */
@@ -1176,6 +1161,11 @@ function initMobMode() {
 }
 initMobMode();
 window.addEventListener('resize', initMobMode);
+
+// Lock to landscape on mobile
+if (isMobile() && screen.orientation && screen.orientation.lock) {
+  screen.orientation.lock('landscape').catch(()=>{});
+}
 
 // Back button → return to browse
 document.getElementById('mob-back').addEventListener('click', mobBrowse);
