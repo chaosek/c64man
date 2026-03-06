@@ -392,7 +392,7 @@ body.emu-focus .c64foot { font-size: 10px; }
 
 <div id="top">
   <div class="logo"><span class="star">&#x2605;</span>&#x20;C64 DISK MANAGER&#x20;<span class="star">&#x2605;</span></div>
-  <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--c64bord);letter-spacing:1px">V4.3</span>
+  <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--c64bord);letter-spacing:1px">V4.4</span>
   <span class="hint">LOAD FOLDER &#x2192; SELECT .D64 &#x2192; CLICK FILE TO RUN</span>
   <span id="clk"></span>
 </div>
@@ -1222,8 +1222,15 @@ function setFocus(mode) {
 }
 
 // Clicking either side panel → browse mode
-document.getElementById('lp').addEventListener('click', () => setFocus('browse-focus'));
-document.getElementById('mp').addEventListener('click', () => setFocus('browse-focus'));
+// Clicking either side panel → browse mode — but NOT on interactive elements
+document.getElementById('lp').addEventListener('click', (e) => {
+  if (e.target.closest('#dz,#tb,button,input')) return;
+  setFocus('browse-focus');
+});
+document.getElementById('mp').addEventListener('click', (e) => {
+  if (e.target.closest('.dl.entry')) return; // entry click launches emu, don't override
+  setFocus('browse-focus');
+});
 
 setFocus('browse-focus');
 
