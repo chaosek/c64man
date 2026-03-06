@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="C64 Manager">
-<link rel="manifest" id="pwa-manifest">
+<link rel="manifest" href="./manifest.json">
 <title>C64 Disk Manager</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
@@ -1158,6 +1158,14 @@ function getEmuFrame() {
 
 function freshEmuFrame() {
   const old = document.getElementById('emu-frame');
+  if (!old) {
+    // fallback — create and append to prev-body
+    const f = document.createElement('iframe');
+    f.id = 'emu-frame';
+    f.style.cssText = 'display:none;width:100%;height:100%;border:none;';
+    document.getElementById('prev-body').appendChild(f);
+    return f;
+  }
   const f = document.createElement('iframe');
   f.id = 'emu-frame';
   f.style.cssText = 'display:none;width:100%;height:100%;border:none;';
@@ -1204,40 +1212,10 @@ if (isMobile() && screen.orientation && screen.orientation.lock) {
 // Back button → return to browse
 document.getElementById('mob-back').addEventListener('click', mobBrowse);
 
-// ══ PWA — MANIFEST + SERVICE WORKER ════════════════════════
-(function() {
-  // Service Worker — caches app shell for offline use
-  if ('serviceWorker' in navigator) {
-    const swCode = `
-const CACHE = 'c64mgr-v1';
-const PRECACHE = [
-  'https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap',
-  'https://cdn.emulatorjs.org/stable/data/loader.js',
-];
-self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(PRECACHE).catch(()=>{})));
-  self.skipWaiting();
-});
-self.addEventListener('activate', e => {
-  e.waitUntil(clients.claim());
-});
-self.addEventListener('fetch', e => {
-  if (e.request.method !== 'GET') return;
-  e.respondWith(
-    caches.match(e.request).then(r => r || fetch(e.request).then(res => {
-      if (res.ok && e.request.url.startsWith('https://cdn.emulatorjs.org')) {
-        caches.open(CACHE).then(c => c.put(e.request, res.clone()));
-      }
-      return res;
-    }).catch(() => caches.match(e.request)))
-  );
-});`;
-    const swBlob = new Blob([swCode], {type:'application/javascript'});
-    const swUrl  = URL.createObjectURL(swBlob);
-    navigator.serviceWorker.register(swUrl, {scope: '/'})
-      .catch(()=>{}); // fails silently on file:// — ok
-  }
-})();
+// ══ PWA — SERVICE WORKER ════════════════════════════════════
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').catch(() => {});
+}
 </script>
 </body>
 </html>
