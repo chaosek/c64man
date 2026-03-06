@@ -83,8 +83,8 @@ body { background:var(--bg); display:flex; flex-direction:column; font-family:va
 }
 .rz:hover, .rz.on { background:var(--c64bord); }
 
-/* LEFT PANEL */
-#lp { width:280px; min-width:120px; transition:width .3s ease; }
+/* LEFT PANEL — fixed, no resize */
+#lp { width:200px; min-width:200px; max-width:200px; }
 
 #dz {
   flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
@@ -141,14 +141,15 @@ body { background:var(--bg); display:flex; flex-direction:column; font-family:va
 #emu-frame { position:absolute; inset:0; width:100%!important; height:100%!important; border:none; display:none; }
 .prev-info { position:absolute; bottom:4px; right:8px; font-size:9px; color:rgba(80,80,180,.4); letter-spacing:1px; text-transform:uppercase; z-index:3; }
 
-/* RIGHT PANEL - directory */
-#dp { width:280px; min-width:160px; transition:width .3s ease; }
+/* RIGHT PANEL - directory — large, readable */
+#dp { width:420px; min-width:160px; transition:width .35s ease; overflow:hidden; }
+body.play-mode #dp { width:0 !important; min-width:0; padding:0; border:none; }
+body.play-mode #rz2 { display:none; }
 
 #c64s {
-  flex:1; overflow-y:auto; overflow-x:hidden; padding:14px 16px 18px;
-  position:relative; z-index:2; font-size:16px; line-height:19px; font-weight:700;
+  flex:1; overflow-y:auto; overflow-x:hidden; padding:14px 20px 18px;
+  position:relative; z-index:2; font-size:20px; line-height:24px; font-weight:700;
   letter-spacing:.5px; color:var(--c64txt); text-transform:uppercase; white-space:pre;
-  transition:font-size .3s ease, padding .3s ease;
 }
 #c64s::-webkit-scrollbar { width:6px; }
 #c64s::-webkit-scrollbar-track { background:var(--c64dark); }
@@ -160,7 +161,7 @@ body { background:var(--bg); display:flex; flex-direction:column; font-family:va
 }
 .c64e-ico { font-size:36px; opacity:.25; }
 
-.dl { display:block; line-height:19px; white-space:pre; cursor:default; transition:line-height .3s ease; }
+.dl { display:block; line-height:24px; white-space:pre; cursor:default; }
 .dl.entry { cursor:pointer; }
 .dl.entry:hover { background:rgba(200,200,255,.1); }
 .rv     { background:var(--c64inv); color:var(--c64invfg); }
@@ -200,15 +201,6 @@ body { background:var(--bg); display:flex; flex-direction:column; font-family:va
 }
 #toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
 
-/* FOCUS STATES — defined last so they win */
-body.emu-focus #lp { width:150px !important; }
-body.emu-focus #dp { width:180px !important; }
-body.emu-focus #c64s { font-size:11px; line-height:13px; padding:6px 8px; }
-body.emu-focus .dl { line-height:13px; }
-body.emu-focus .phdr { font-size:9px; }
-body.emu-focus .pfoot { font-size:8px; }
-body.emu-focus .nn { font-size:11px; }
-
 /* MOBILE */
 @media (max-width:900px) and (orientation:portrait) {
   html { transform:rotate(90deg); transform-origin:left top; width:100vh; height:100vw; overflow:hidden; position:absolute; top:0; left:100%; transition:none; }
@@ -217,23 +209,23 @@ body.emu-focus .nn { font-size:11px; }
 @keyframes fadeIn { to { opacity:1; } }
 
 @media (max-width:900px) {
-  .rz { display:none; }
-  #lp { width:22% !important; min-width:unset; }
-  #dp { width:28% !important; min-width:unset; }
+  .rz { display:none !important; }
+  #lp { width:160px !important; min-width:160px !important; max-width:160px !important; }
+  #dp { width:100% !important; }
+  body.play-mode #dp { width:0 !important; }
   #ep { flex:1 !important; }
   #top { height:22px; }
   #bot { height:18px; }
   .logo { font-size:9px; }
   .bk, .bl, #st { font-size:7px; }
-  .phdr { font-size:9px; padding:0 4px; }
-  .pfoot { font-size:8px; padding:0 4px; gap:6px; }
+  .phdr { font-size:10px; padding:0 6px; }
+  .pfoot { font-size:9px; padding:0 6px; gap:6px; }
   .nn { font-size:11px; }
-  #c64s { padding:3px 5px; font-size:10px; line-height:13px; }
-  .dl { line-height:13px; }
+  #c64s { padding:6px 10px; font-size:16px; line-height:20px; }
+  .dl { line-height:20px; }
   .d-blk { display:none; }
   .d-free { display:none; }
-  body.emu-focus #lp { width:16% !important; }
-  body.emu-focus #dp { width:20% !important; }
+  .cur { height:14px; }
 }
 </style>
 </head>
@@ -241,7 +233,7 @@ body.emu-focus .nn { font-size:11px; }
 
 <div id="top">
   <div class="logo"><b>★</b> C64 DISK MANAGER <b>★</b></div>
-  <span id="ver">V1.2</span>
+  <span id="ver">V1.3</span>
   <span id="clk"></span>
 </div>
 
@@ -274,7 +266,7 @@ body.emu-focus .nn { font-size:11px; }
     </div>
   </div>
 
-  <div class="rz" id="rz1"></div>
+  <div class="rz" id="rz1" style="display:none"></div>
 
   <!-- MIDDLE: emulator -->
   <div class="panel" id="ep">
@@ -511,8 +503,8 @@ function launchEmulator(entry){
   document.getElementById('prev-info').textContent=isFirst?'D64':'PRG·'+entry.blocks+'BLK';
   document.getElementById('emu-placeholder').style.display='none';
 
-  // shrink side panels
-  document.body.classList.add('emu-focus');
+  // play mode — pravý panel zmizí, emulator zabere vše
+  document.body.classList.add('play-mode');
 
   // always fresh iframe
   const old=document.getElementById('emu-frame');
@@ -704,14 +696,14 @@ function makeResizer(rzId,el,invert){
     if(!down)return;down=false;rz.classList.remove('on');document.body.style.cssText='';
   });
 }
-makeResizer('rz1',document.getElementById('lp'),false);
 makeResizer('rz2',document.getElementById('dp'),true);
 
 // ══ FOCUS ════════════════════════════════════════════════════════
-// clicking tree or directory (not on a game entry) → restore panels
-document.getElementById('tw').addEventListener('click',()=>document.body.classList.remove('emu-focus'));
+// klik na strom → browse mode (pravý panel zpět)
+document.getElementById('tw').addEventListener('click',()=>document.body.classList.remove('play-mode'));
+// klik na adresář mimo hru → browse mode
 document.getElementById('c64s').addEventListener('click',e=>{
-  if(!e.target.closest('.dl.entry'))document.body.classList.remove('emu-focus');
+  if(!e.target.closest('.dl.entry'))document.body.classList.remove('play-mode');
 });
 
 // ══ CLOCK & STATUS ═══════════════════════════════════════════════
