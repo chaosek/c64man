@@ -379,17 +379,21 @@ function parseD64(buf){
   }
   const entries=[];
   let tr=18,sc=1;
-  for(let i=0;i<144;i++){
+  for(let guard=0;guard<20&&tr!==0;guard++){
     const base=secOff(tr,sc);
-    const off=base+i%8*32;
-    if(d[off+2]===0)continue;
-    const ft=d[off+2]&0x07;
-    const closed=!!(d[off+2]&0x80);
-    const locked=!!(d[off+2]&0x40);
-    const fn=readPet(d,off+5,16);
-    const blocks=(d[off+0x1E]|(d[off+0x1F]<<8));
-    entries.push({filename:fn.disp,fnVice:fn.vice,type:FTYPES[ft],blocks,closed,locked});
-    if((i+1)%8===0){const nb=secOff(tr,sc);const nt=d[nb],ns=d[nb+1];if(!nt)break;tr=nt;sc=ns;}
+    for(let slot=0;slot<8;slot++){
+      const off=base+slot*32;
+      if(d[off+2]===0)continue;
+      const ft=d[off+2]&0x07;
+      const closed=!!(d[off+2]&0x80);
+      const locked=!!(d[off+2]&0x40);
+      const fn=readPet(d,off+5,16);
+      const blocks=(d[off+0x1E]|(d[off+0x1F]<<8));
+      entries.push({filename:fn.disp,fnVice:fn.vice,type:FTYPES[ft],blocks,closed,locked});
+    }
+    const nt=d[base],ns=d[base+1];
+    if(!nt)break;
+    tr=nt;sc=ns;
   }
   return {diskName,diskId,free,entries,data:buf};
 }
