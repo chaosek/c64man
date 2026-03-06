@@ -84,7 +84,7 @@ body { background:var(--bg); display:flex; flex-direction:column; font-family:va
 .rz:hover, .rz.on { background:var(--c64bord); }
 
 /* LEFT PANEL */
-#lp { width:300px; min-width:120px; transition:width .3s ease; }
+#lp { width:280px; min-width:120px; transition:width .3s ease; }
 
 #dz {
   flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
@@ -142,7 +142,7 @@ body { background:var(--bg); display:flex; flex-direction:column; font-family:va
 .prev-info { position:absolute; bottom:4px; right:8px; font-size:9px; color:rgba(80,80,180,.4); letter-spacing:1px; text-transform:uppercase; z-index:3; }
 
 /* RIGHT PANEL - directory */
-#dp { width:400px; min-width:160px; transition:width .3s ease; }
+#dp { width:280px; min-width:160px; transition:width .3s ease; }
 
 #c64s {
   flex:1; overflow-y:auto; overflow-x:hidden; padding:14px 16px 18px;
@@ -241,7 +241,7 @@ body.emu-focus .nn { font-size:11px; }
 
 <div id="top">
   <div class="logo"><b>★</b> C64 DISK MANAGER <b>★</b></div>
-  <span id="ver">V1.0</span>
+  <span id="ver">V1.2</span>
   <span id="clk"></span>
 </div>
 
@@ -467,6 +467,14 @@ function buildSrcdoc(gameUrl,gameName){
     +'</body></html>';
 }
 
+// Převede ArrayBuffer/Uint8Array na base64 data URI
+function toDataURI(data,mime){
+  const bytes=data instanceof Uint8Array?data:new Uint8Array(data);
+  let bin='';
+  for(let i=0;i<bytes.length;i++)bin+=String.fromCharCode(bytes[i]);
+  return 'data:'+mime+';base64,'+btoa(bin);
+}
+
 function launchEmulator(entry){
   if(!curDisk){setS('NO DISK');return;}
   if(emuBlobUrl){URL.revokeObjectURL(emuBlobUrl);emuBlobUrl=null;}
@@ -474,17 +482,28 @@ function launchEmulator(entry){
   const isFirst=entries_ref.length>0&&entries_ref[0]===entry;
   let gameUrl,gameName;
 
+  const mobile=/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+
   if(isFirst){
-    const blob=new Blob([curDisk.data],{type:'application/octet-stream'});
-    emuBlobUrl=URL.createObjectURL(blob);
-    gameUrl=emuBlobUrl;gameName='disk.d64';
+    gameName='disk.d64';
+    if(mobile){
+      gameUrl=toDataURI(curDisk.data,'application/octet-stream');
+    } else {
+      const blob=new Blob([curDisk.data],{type:'application/octet-stream'});
+      emuBlobUrl=URL.createObjectURL(blob);
+      gameUrl=emuBlobUrl;
+    }
   } else {
     const prg=readFileData(entry);
     if(!prg||!prg.length){setS('EMPTY FILE');return;}
-    const blob=new Blob([prg],{type:'application/octet-stream'});
-    emuBlobUrl=URL.createObjectURL(blob);
-    gameUrl=emuBlobUrl;
     gameName=(entry.fnVice||entry.filename).trim()+'.prg';
+    if(mobile){
+      gameUrl=toDataURI(prg,'application/octet-stream');
+    } else {
+      const blob=new Blob([prg],{type:'application/octet-stream'});
+      emuBlobUrl=URL.createObjectURL(blob);
+      gameUrl=emuBlobUrl;
+    }
   }
 
   document.getElementById('ep-title').textContent=entry.filename;
@@ -616,6 +635,18 @@ function loadFolder(fileList){
   expanded=new Set();
   if(roots.length)expanded.add(roots[0].path);
   selNode=null;
+
+  // Na mobilu zobraz jen D64 soubory v ploché struktuře — bez hluboké cesty
+  const mobile=/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)||window.innerWidth<=900;
+  if(mobile){
+    const allD64=[];
+    function collectD64(nodes){nodes.forEach(n=>{if(n.isD64&&n.file)allD64.push(n);collectD64(n.children);});}
+    collectD64(roots);
+    // Přepíšeme roots na plochou strukturu
+    roots=allD64.map(n=>({...n,depth:0,children:[]}));
+    expanded=new Set();
+  }
+
   document.getElementById('dz').style.display='none';
   document.getElementById('tb').style.display='flex';
   document.getElementById('tw').style.display='block';
