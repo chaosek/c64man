@@ -3,7 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="screen-orientation" content="landscape">
 <meta name="theme-color" content="#18186a">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -15,251 +14,250 @@
 @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
 
 :root {
-  --pc-bg:      #13131a;
-  --pc-panel:   #191921;
-  --pc-border:  #262634;
-  --pc-hover:   #1f1f2d;
-  --pc-sel:     #1a2a48;
-  --pc-stxt:    #70a8ff;
-  --pc-txt:     #aaaacb;
-  --pc-dim:     #444458;
-  --pc-fld:     #dca820;
-  --pc-d64:     #38d080;
-  --pc-file:    #5a6878;
-  --pc-hdr:     #0e0e16;
-
-  --c64bg:      #3535c0;
-  --c64dark:    #18186a;
-  --c64bord:    #4848c8;
-  --c64txt:     #7070e8;
-  --c64white:   #d0d0ff;
-  --c64cyan:    #18d8d8;
-  --c64green:   #18d818;
-  --c64yel:     #d8d018;
-  --c64red:     #d81818;
-  --c64mag:     #c818c8;
-  --c64invbg:   #7070e8;
-  --c64invfg:   #3535c0;
-  --scan:       rgba(0,0,14,.06);
+  --bg:       #080810;
+  --c64bg:    #3535c0;
+  --c64dark:  #18186a;
+  --c64bord:  #4848c8;
+  --c64txt:   #7070e8;
+  --c64white: #d0d0ff;
+  --c64cyan:  #18d8d8;
+  --c64green: #18d818;
+  --c64yel:   #d8d018;
+  --c64red:   #d81818;
+  --c64mag:   #c818c8;
+  --c64inv:   #7070e8;
+  --c64invfg: #3535c0;
+  --scan:     rgba(0,0,14,.06);
+  --font:     'Share Tech Mono', monospace;
 }
 
-*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
-html,body { height:100%; overflow:hidden; }
-body { background:#080810; display:flex; flex-direction:column; }
+*, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+html, body { height:100%; overflow:hidden; }
+body { background:var(--bg); display:flex; flex-direction:column; font-family:var(--font); }
 
-/* ── TOP BAR ── */
+/* TOP BAR */
 #top {
-  height:24px; background:var(--c64dark); border-bottom:1px solid var(--c64bord);
-  display:flex; align-items:center; padding:0 14px; gap:10px; flex-shrink:0;
+  height:26px; background:var(--c64dark); border-bottom:2px solid var(--c64bord);
+  display:flex; align-items:center; padding:0 12px; gap:10px; flex-shrink:0; z-index:10;
 }
-.logo {
-  font-family:'Share Tech Mono',monospace; font-size:13px; letter-spacing:3px;
-  color:var(--c64txt); text-transform:uppercase; display:flex; align-items:center; gap:6px;
-}
-.star { color:var(--c64yel); }
-.hint { font-family:'Share Tech Mono',monospace; font-size:11px; color:var(--c64bord);
-        letter-spacing:1px; text-transform:uppercase; flex:1; }
-#clk  { font-family:'Share Tech Mono',monospace; font-size:12px; color:var(--c64txt); letter-spacing:2px; }
+.logo { font-size:12px; letter-spacing:3px; color:var(--c64txt); text-transform:uppercase; }
+.logo b { color:var(--c64yel); }
+#ver { font-size:9px; color:var(--c64bord); letter-spacing:1px; }
+#clk { font-size:11px; color:var(--c64txt); letter-spacing:2px; margin-left:auto; }
 
-/* ── WORKSPACE ── */
+/* WORKSPACE */
 #ws { flex:1; display:flex; overflow:hidden; min-height:0; }
 
-/* ── FORCE LANDSCAPE VIA CSS ROTATION ── */
-@media (max-width: 900px) and (orientation: portrait) {
-  html {
-    transform: rotate(90deg);
-    transform-origin: left top;
-    width: 100vh;
-    height: 100vw;
-    overflow: hidden;
-    position: absolute;
-    top: 0;
-    left: 100%;
-    transition: none;
-  }
-  body { opacity: 0; animation: fadeIn 0.15s ease 0.05s forwards; }
+/* PANEL BASE */
+.panel {
+  display:flex; flex-direction:column; overflow:hidden;
+  background:var(--c64bg); position:relative; flex-shrink:0;
 }
-@keyframes fadeIn { to { opacity: 1; } }
-
-/* ── MOBILE — three panels side by side, resizers hidden ── */
-@media (max-width: 900px) {
-  #rz1, #rz2 { display:none; }
-  .hint { display:none; }
-  #lp { width:20%; min-width:unset; }
-  #mp { width:30%; min-width:unset; }
-  #rp { flex:1; min-width:0; }
-  #top { height:26px; }
-  #bot { height:22px; }
-  .logo { font-size:10px; letter-spacing:1px; }
-  .bk, .bl, #st { font-size:8px; }
-  /* Compact directory listing */
-  #c64s { padding:4px 6px; font-size:11px; line-height:14px; }
-  .dl { line-height:14px; }
-  .cur { width:8px; height:12px; }
-  .c64foot { font-size:9px; padding:0 4px; gap:6px; }
-  .c64hdr { font-size:9px; padding:0 4px; }
-  /* Hide block counts on mobile — save space */
-  .d-blk { display:none; }
-  .d-free { display:none; }
-  #prev-body { position:relative; flex:1; min-height:0; }
-  #emu-frame { position:absolute; inset:0; width:100% !important; height:100% !important; }
-}
-
-/* Back button — hidden, no longer needed */
-#mob-back { display:none !important; }
-
-/* ── LEFT PANEL ── */
-#lp {
-  width:340px; min-width:140px; display:flex; flex-direction:column;
-  background:var(--c64bg); overflow:hidden; flex-shrink:0; position:relative;
-  transition: width .3s ease;
-}
-#lp::before {
+.panel::before {
   content:''; position:absolute; inset:0; pointer-events:none; z-index:5;
-  background:repeating-linear-gradient(0deg, transparent, transparent 3px, var(--scan) 3px, var(--scan) 4px);
+  background:repeating-linear-gradient(0deg,transparent,transparent 3px,var(--scan) 3px,var(--scan) 4px);
 }
+.panel::after {
+  content:''; position:absolute; inset:0; pointer-events:none; z-index:4;
+  background:radial-gradient(ellipse 90% 80% at 50% 44%,rgba(60,60,200,.04) 0%,rgba(0,0,18,.18) 100%);
+}
+.phdr {
+  height:20px; background:var(--c64dark); border-bottom:1px solid var(--c64bord);
+  display:flex; align-items:center; padding:0 8px; gap:8px; flex-shrink:0; z-index:6;
+  font-size:11px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--c64white);
+}
+.phdr-t { flex:1; }
+.phdr-s { font-size:9px; color:var(--c64txt); }
+.pfoot {
+  height:20px; background:var(--c64dark); border-top:1px solid var(--c64bord);
+  display:flex; align-items:center; padding:0 8px; gap:12px; flex-shrink:0; z-index:6;
+  font-size:10px; color:var(--c64txt); letter-spacing:1px; text-transform:uppercase;
+}
+.pfoot b { color:var(--c64white); }
 
-/* shared C64 font */
-.c64f { font-family:'Share Tech Mono',monospace; font-size:16px; line-height:18px; font-weight:700; letter-spacing:.5px; text-transform:uppercase; }
+/* RESIZER */
+.rz {
+  width:5px; background:var(--c64dark); border-left:1px solid var(--c64bord);
+  border-right:1px solid var(--c64bord); cursor:col-resize; flex-shrink:0;
+  transition:background .15s; z-index:10;
+}
+.rz:hover, .rz.on { background:var(--c64bord); }
 
-/* drop zone */
-#dz { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; cursor:pointer; color:var(--c64txt); font-family:'Share Tech Mono',monospace; font-size:16px; font-weight:700; letter-spacing:2px; text-transform:uppercase; position:relative; z-index:2; }
+/* LEFT PANEL */
+#lp { width:300px; min-width:120px; transition:width .3s ease; }
+
+#dz {
+  flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:8px; cursor:pointer; color:var(--c64txt); font-size:13px; font-weight:700;
+  letter-spacing:2px; text-transform:uppercase; position:relative; z-index:2;
+}
 #dz:hover, #dz.on { background:rgba(112,112,232,.08); }
-#dz .di { font-size:28px; opacity:.35; margin-bottom:4px; }
+#dz .di { font-size:32px; opacity:.3; }
 #dz .dt { color:var(--c64white); }
-#dz .ds { font-size:11px; color:var(--c64txt); letter-spacing:1px; }
+#dz .ds { font-size:10px; letter-spacing:1px; }
 
-/* toolbar */
-#tb { height:22px; background:var(--c64dark); border-bottom:1px solid var(--c64bord); display:none; align-items:center; padding:0 4px; gap:3px; flex-shrink:0; z-index:6; }
-.tbb { height:16px; padding:0 6px; background:var(--c64bg); border:1px solid var(--c64bord); color:var(--c64txt); font-family:'Share Tech Mono',monospace; font-size:10px; font-weight:700; letter-spacing:1px; text-transform:uppercase; cursor:pointer; }
-.tbb:hover { background:var(--c64invbg); color:var(--c64invfg); }
-.tfl { flex:1; height:16px; background:var(--c64dark); border:1px solid var(--c64bord); color:var(--c64white); font-family:'Share Tech Mono',monospace; font-size:12px; font-weight:700; letter-spacing:1px; text-transform:uppercase; padding:0 5px; outline:none; }
+#tb {
+  height:22px; background:var(--c64dark); border-bottom:1px solid var(--c64bord);
+  display:none; align-items:center; padding:0 4px; gap:3px; flex-shrink:0; z-index:6;
+}
+.tbb {
+  height:16px; padding:0 6px; background:var(--c64bg); border:1px solid var(--c64bord);
+  color:var(--c64txt); font-family:var(--font); font-size:10px; font-weight:700;
+  letter-spacing:1px; text-transform:uppercase; cursor:pointer;
+}
+.tbb:hover { background:var(--c64inv); color:var(--c64invfg); }
+.tfl {
+  flex:1; height:16px; background:var(--c64dark); border:1px solid var(--c64bord);
+  color:var(--c64white); font-family:var(--font); font-size:11px; font-weight:700;
+  letter-spacing:1px; text-transform:uppercase; padding:0 4px; outline:none;
+}
 .tfl::placeholder { color:var(--c64bord); }
-.tfl:focus { border-color:var(--c64white); }
 
-/* file tree */
 #tw { flex:1; overflow-y:auto; overflow-x:hidden; display:none; position:relative; z-index:2; }
-.tn { display:flex; align-items:center; height:18px; padding-left:4px; padding-right:4px; cursor:pointer; user-select:none; white-space:nowrap; }
-.tn:hover { background:rgba(112,112,232,.18); }
-.tn.sel   { background:var(--c64invbg); }
-.tn.sel .nn { color:var(--c64invfg); }
-.ntog { width:14px; flex-shrink:0; text-align:center; font-family:'Share Tech Mono',monospace; font-size:14px; font-weight:700; color:var(--c64txt); }
-.nn   { font-family:'Share Tech Mono',monospace; font-size:16px; line-height:18px; font-weight:700; letter-spacing:.5px; text-transform:uppercase; flex:1; overflow:hidden; text-overflow:ellipsis; color:var(--c64txt); }
-.nn.fld { color:var(--c64white); }
-.nn.d64 { color:var(--c64cyan); }
-.nn.fil { color:var(--c64txt); }
-.tn.sel .nn.fld, .tn.sel .nn.d64, .tn.sel .nn.fil { color:var(--c64invfg); }
-.nsz  { font-family:'Share Tech Mono',monospace; font-size:11px; color:var(--c64bord); flex-shrink:0; margin-left:4px; }
-
-/* panel footer */
-.pfoot { height:18px; background:var(--c64dark); border-top:1px solid var(--c64bord); display:flex; align-items:center; padding:0 8px; gap:14px; flex-shrink:0; z-index:6; font-family:'Share Tech Mono',monospace; font-size:11px; font-weight:700; color:var(--c64txt); text-transform:uppercase; letter-spacing:1px; }
-.pfoot b { color:var(--c64white); font-weight:700; }
-#tw::-webkit-scrollbar { width:6px; }
+#tw::-webkit-scrollbar { width:5px; }
 #tw::-webkit-scrollbar-track { background:var(--c64dark); }
 #tw::-webkit-scrollbar-thumb { background:var(--c64bord); }
 
-/* ── RESIZERS ── */
-.rz { width:3px; background:var(--c64bord); cursor:col-resize; flex-shrink:0; transition:background .15s; }
-.rz:hover, .rz.on { background:var(--c64white); }
-#rz1, #rz2 { border-left:1px solid var(--c64bord); border-right:1px solid var(--c64bord); }
+.tn { display:flex; align-items:center; height:18px; padding:0 4px; cursor:pointer; user-select:none; white-space:nowrap; }
+.tn:hover { background:rgba(112,112,232,.18); }
+.tn.sel { background:var(--c64inv); }
+.tn.sel .nn { color:var(--c64invfg); }
+.ntog { width:14px; flex-shrink:0; text-align:center; font-size:13px; color:var(--c64txt); }
+.nn { font-size:13px; line-height:18px; font-weight:700; letter-spacing:.5px; text-transform:uppercase; flex:1; overflow:hidden; text-overflow:ellipsis; color:var(--c64txt); }
+.nn.fld { color:var(--c64white); }
+.nn.d64 { color:var(--c64cyan); }
+.nsz { font-size:10px; color:var(--c64bord); flex-shrink:0; margin-left:4px; }
 
-/* ── MIDDLE PANEL — emulator ── */
-#rp {
-  flex:1; display:flex; flex-direction:column;
-  background:var(--c64bg); overflow:hidden; position:relative;
-  transition: flex .3s ease;
+/* MIDDLE PANEL - emulator */
+#ep { flex:1; min-width:0; transition:flex .3s ease; }
+
+#prev-body { flex:1; overflow:hidden; position:relative; z-index:2; }
+#emu-placeholder {
+  position:absolute; inset:0; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; gap:14px;
+  color:rgba(60,60,175,.4); font-size:11px; letter-spacing:3px; text-transform:uppercase;
+  background:var(--c64bg);
 }
+#emu-frame { position:absolute; inset:0; width:100%!important; height:100%!important; border:none; display:none; }
+.prev-info { position:absolute; bottom:4px; right:8px; font-size:9px; color:rgba(80,80,180,.4); letter-spacing:1px; text-transform:uppercase; z-index:3; }
 
-/* ── RIGHT PANEL — directory ── */
-#mp {
-  width:420px; min-width:180px; display:flex; flex-direction:column;
-  background:var(--c64bg); overflow:hidden; flex-shrink:0; position:relative;
-  transition: width .3s ease;
+/* RIGHT PANEL - directory */
+#dp { width:400px; min-width:160px; transition:width .3s ease; }
+
+#c64s {
+  flex:1; overflow-y:auto; overflow-x:hidden; padding:14px 16px 18px;
+  position:relative; z-index:2; font-size:16px; line-height:19px; font-weight:700;
+  letter-spacing:.5px; color:var(--c64txt); text-transform:uppercase; white-space:pre;
+  transition:font-size .3s ease, padding .3s ease;
 }
+#c64s::-webkit-scrollbar { width:6px; }
+#c64s::-webkit-scrollbar-track { background:var(--c64dark); }
+#c64s::-webkit-scrollbar-thumb { background:var(--c64bord); }
+#c64e {
+  height:100%; display:flex; flex-direction:column; align-items:center;
+  justify-content:center; gap:12px; color:rgba(55,55,175,.4); font-size:11px;
+  letter-spacing:3px; pointer-events:none;
+}
+.c64e-ico { font-size:36px; opacity:.25; }
 
-/* CRT scanlines */
-#mp::before, #rp::before { content:''; position:absolute; inset:0; pointer-events:none; z-index:5; background:repeating-linear-gradient(0deg, transparent, transparent 3px, var(--scan) 3px, var(--scan) 4px); }
-#mp::after, #rp::after { content:''; position:absolute; inset:0; pointer-events:none; z-index:4; background:radial-gradient(ellipse 90% 80% at 50% 44%, rgba(60,60,200,.04) 0%, rgba(0,0,18,.18) 100%); }
-
-.c64hdr { height:18px; background:var(--c64dark); color:var(--c64white); display:flex; align-items:center; padding:0 8px; gap:8px; border-bottom:1px solid var(--c64bord); flex-shrink:0; z-index:6; font-family:'Share Tech Mono',monospace; text-transform:uppercase; letter-spacing:1px; font-size:12px; font-weight:700; }
-.c64hdr-t { flex:1; color:var(--c64white); }
-.c64hdr-s { font-size:10px; color:var(--c64txt); letter-spacing:1px; }
-
-/* Directory listing */
-#c64s { flex:1; overflow-y:auto; overflow-x:hidden; padding:18px 22px 24px; position:relative; z-index:2; font-family:'Share Tech Mono',monospace; font-size:20px; line-height:20px; font-weight:700; letter-spacing:.5px; color:var(--c64txt); text-transform:uppercase; white-space:pre; transition: font-size .3s ease, padding .3s ease; }
-#c64e { height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; color:rgba(55,55,175,.4); font-size:12px; letter-spacing:3px; pointer-events:none; }
-.c64e-ico { font-size:40px; opacity:.28; }
-.dl { display:block; line-height:20px; white-space:pre; cursor:default; transition: line-height .3s ease; }
+.dl { display:block; line-height:19px; white-space:pre; cursor:default; transition:line-height .3s ease; }
 .dl.entry { cursor:pointer; }
 .dl.entry:hover { background:rgba(200,200,255,.1); }
-.rv     { background:var(--c64invbg); color:var(--c64invfg); }
+.rv     { background:var(--c64inv); color:var(--c64invfg); }
 .d-blk  { color:var(--c64white); display:inline-block; }
 .d-fn   { color:var(--c64white); }
 .d-id   { color:var(--c64white); }
-.t-prg  { color:var(--c64cyan);  }
+.t-prg  { color:var(--c64cyan); }
 .t-seq  { color:var(--c64green); }
-.t-rel  { color:var(--c64yel);   }
-.t-usr  { color:var(--c64mag);   }
-.t-dir  { color:var(--c64yel);   }
-.t-del  { color:rgba(180,180,255,.18); }
-.t-cbm  { color:var(--c64mag);   }
-.t-nc   { color:var(--c64red);   }
-.t-lk   { color:var(--c64yel);   }
+.t-rel  { color:var(--c64yel); }
+.t-usr  { color:var(--c64mag); }
+.t-dir  { color:var(--c64yel); }
+.t-del  { color:rgba(180,180,255,.2); }
+.t-cbm  { color:var(--c64mag); }
+.t-nc   { color:var(--c64red); }
+.t-lk   { color:var(--c64yel); }
 .d-free { color:var(--c64white); }
-.cur    { display:inline-block; width:12px; height:18px; background:var(--c64txt); vertical-align:text-bottom; animation:blink 1s step-end infinite; }
+.cur { display:inline-block; width:10px; height:17px; background:var(--c64txt); vertical-align:text-bottom; animation:blink 1s step-end infinite; }
 @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
 
-.c64foot { height:22px; background:var(--c64dark); border-top:1px solid var(--c64bord); display:flex; align-items:center; padding:0 12px; gap:18px; flex-shrink:0; z-index:6; font-family:'Share Tech Mono',monospace; font-size:11px; color:var(--c64txt); text-transform:uppercase; letter-spacing:1px; }
-.c64foot b { color:var(--c64white); font-weight:normal; }
-#c64s::-webkit-scrollbar { width:7px; }
-#c64s::-webkit-scrollbar-track { background:var(--c64dark); }
-#c64s::-webkit-scrollbar-thumb { background:var(--c64bord); }
-
-/* Preview panel */
-#prev-body { flex:1; overflow:hidden; padding:0; background:var(--c64bg); position:relative; z-index:2; }
-#emu-placeholder { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; color:rgba(60,60,175,.4); font-family:'Share Tech Mono',monospace; font-size:11px; letter-spacing:3px; text-transform:uppercase; background:var(--c64bg); }
-#emu-frame { position:absolute; inset:0; width:100% !important; height:100% !important; border:none; }
-.prev-info { position:absolute; bottom:6px; right:10px; font-family:'Share Tech Mono',monospace; font-size:10px; color:rgba(80,80,180,.45); letter-spacing:1px; text-transform:uppercase; z-index:3; }
-
-/* ── BOTTOM BAR ── */
-#bot { height:20px; background:var(--c64dark); border-top:1px solid var(--c64bord); display:flex; align-items:center; padding:0 10px; gap:16px; flex-shrink:0; }
-.bk  { font-family:'Share Tech Mono',monospace; font-size:10px; font-weight:700; background:var(--c64invbg); color:var(--c64invfg); padding:0 4px; margin-right:3px; letter-spacing:1px; }
-.bl  { font-family:'Share Tech Mono',monospace; font-size:10px; font-weight:700; color:var(--c64txt); letter-spacing:1px; text-transform:uppercase; }
+/* BOTTOM BAR */
+#bot {
+  height:20px; background:var(--c64dark); border-top:1px solid var(--c64bord);
+  display:flex; align-items:center; padding:0 10px; gap:14px; flex-shrink:0;
+}
+.bk { background:var(--c64inv); color:var(--c64invfg); font-size:9px; font-weight:700; padding:0 4px; margin-right:2px; letter-spacing:1px; }
+.bl { font-size:9px; color:var(--c64txt); letter-spacing:1px; text-transform:uppercase; }
 .bsp { flex:1; }
-#st  { font-family:'Share Tech Mono',monospace; font-size:10px; font-weight:700; color:var(--c64txt); letter-spacing:1px; text-transform:uppercase; }
+#st { font-size:9px; color:var(--c64txt); letter-spacing:1px; text-transform:uppercase; }
 
-/* ── COPY TOAST ── */
-#toast { position:fixed; bottom:40px; left:50%; transform:translateX(-50%) translateY(16px); background:var(--c64dark); border:1px solid var(--c64white); color:var(--c64white); font-family:'Share Tech Mono',monospace; font-size:11px; letter-spacing:2px; text-transform:uppercase; padding:7px 18px; border-radius:4px; opacity:0; transition:opacity .25s, transform .25s; z-index:999; pointer-events:none; max-width:80vw; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+/* TOAST */
+#toast {
+  position:fixed; bottom:36px; left:50%; transform:translateX(-50%) translateY(12px);
+  background:var(--c64dark); border:1px solid var(--c64white); color:var(--c64white);
+  font-family:var(--font); font-size:10px; letter-spacing:2px; text-transform:uppercase;
+  padding:6px 16px; border-radius:3px; opacity:0; transition:opacity .2s,transform .2s;
+  z-index:999; pointer-events:none;
+}
 #toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
 
-/* ── FOCUS LAYOUT — emu-focus shrinks side panels ── */
-body.emu-focus #lp { width: 160px !important; }
-body.emu-focus #mp { width: 200px !important; }
-body.emu-focus #c64s { font-size: 13px; line-height: 14px; padding: 8px 10px; }
-body.emu-focus .dl  { line-height: 14px; }
-body.emu-focus .c64hdr { font-size: 10px; }
-body.emu-focus .c64foot { font-size: 9px; }
+/* FOCUS STATES — defined last so they win */
+body.emu-focus #lp { width:150px !important; }
+body.emu-focus #dp { width:180px !important; }
+body.emu-focus #c64s { font-size:11px; line-height:13px; padding:6px 8px; }
+body.emu-focus .dl { line-height:13px; }
+body.emu-focus .phdr { font-size:9px; }
+body.emu-focus .pfoot { font-size:8px; }
+body.emu-focus .nn { font-size:11px; }
+
+/* MOBILE */
+@media (max-width:900px) and (orientation:portrait) {
+  html { transform:rotate(90deg); transform-origin:left top; width:100vh; height:100vw; overflow:hidden; position:absolute; top:0; left:100%; transition:none; }
+  body { opacity:0; animation:fadeIn .15s ease .05s forwards; }
+}
+@keyframes fadeIn { to { opacity:1; } }
+
+@media (max-width:900px) {
+  .rz { display:none; }
+  #lp { width:22% !important; min-width:unset; }
+  #dp { width:28% !important; min-width:unset; }
+  #ep { flex:1 !important; }
+  #top { height:22px; }
+  #bot { height:18px; }
+  .logo { font-size:9px; }
+  .bk, .bl, #st { font-size:7px; }
+  .phdr { font-size:9px; padding:0 4px; }
+  .pfoot { font-size:8px; padding:0 4px; gap:6px; }
+  .nn { font-size:11px; }
+  #c64s { padding:3px 5px; font-size:10px; line-height:13px; }
+  .dl { line-height:13px; }
+  .d-blk { display:none; }
+  .d-free { display:none; }
+  body.emu-focus #lp { width:16% !important; }
+  body.emu-focus #dp { width:20% !important; }
+}
 </style>
 </head>
 <body>
 
 <div id="top">
-  <div class="logo"><span class="star">&#x2605;</span>&#x20;C64 DISK MANAGER&#x20;<span class="star">&#x2605;</span></div>
-  <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--c64bord);letter-spacing:1px">V4.8</span>
-  <span class="hint">LOAD FOLDER &#x2192; SELECT .D64 &#x2192; CLICK FILE TO RUN</span>
+  <div class="logo"><b>★</b> C64 DISK MANAGER <b>★</b></div>
+  <span id="ver">V1.0</span>
   <span id="clk"></span>
 </div>
-<div id="mob-back" title="BACK">&#x2B05;</div>
 
 <div id="ws">
 
-  <!-- PANEL 1: PC file tree — C64 PETSCII style -->
-  <div id="lp">
+  <!-- LEFT: file tree -->
+  <div class="panel" id="lp">
+    <div class="phdr">
+      <span class="phdr-t">FILES</span>
+      <span class="phdr-s" id="lp-sub">LOAD FOLDER</span>
+    </div>
     <div id="dz">
-      <div class="di">&#x1F4BE;</div>
+      <div class="di">💾</div>
       <div class="dt">LOAD FOLDER</div>
       <div class="ds">DRAG OR CLICK</div>
-      <div class="ds" style="font-size:11px;margin-top:2px;color:var(--c64bord)">SCANS ALL .D64 FILES</div>
+      <div class="ds">SCANS .D64 FILES</div>
     </div>
     <div id="tb">
       <button class="tbb" id="btnR">NEW</button>
@@ -268,64 +266,60 @@ body.emu-focus .c64foot { font-size: 9px; }
       <input class="tfl" id="tflt" placeholder="SEARCH...">
     </div>
     <div id="tw"><div id="tree"></div></div>
-    <div class="pfoot">
+    <div class="pfoot" id="lpfoot" style="display:none">
       <span>DIR:<b id="pf">0</b></span>
       <span>D64:<b id="pd">0</b></span>
-      <span>FILE:<b id="px">0</b></span>
       <span style="flex:1"></span>
-      <span style="color:var(--c64bord)" id="pcpath"></span>
+      <span style="color:var(--c64bord);font-size:9px" id="pcpath"></span>
     </div>
   </div>
 
   <div class="rz" id="rz1"></div>
 
-  <!-- PANEL 2: C64 emulator (EmulatorJS / vice_x64sc) -->
-  <div id="rp">
-    <div class="c64hdr">
-      <span class="c64hdr-t" id="prevtitle">*** VICE X64SC EMULATOR ***</span>
-      <span class="c64hdr-s" id="prevsub">CLICK FILE TO RUN</span>
+  <!-- MIDDLE: emulator -->
+  <div class="panel" id="ep">
+    <div class="phdr">
+      <span class="phdr-t" id="ep-title">*** VICE X64SC ***</span>
+      <span class="phdr-s" id="ep-sub">CLICK FILE TO RUN</span>
     </div>
     <div id="prev-body">
       <div id="emu-placeholder">
-        <span style="font-size:36px;opacity:.25">🕹️</span>
-        <span>KLIKNI NA SOUBOR V ADRESÁŘI</span>
-        <span style="font-size:10px;opacity:.4">SPUSTÍ VICE X64SC (EmulatorJS)</span>
-        <span style="font-size:9px;opacity:.25;margin-top:8px">vyžaduje internet · cdn.emulatorjs.org</span>
+        <span style="font-size:40px;opacity:.2">🕹️</span>
+        <span>KLIKNI NA SOUBOR</span>
+        <span style="font-size:9px;opacity:.5">VICE X64SC · EmulatorJS</span>
       </div>
-      <!-- EmulatorJS se načte do tohoto iframe -->
-      <iframe id="emu-frame" style="display:none;width:100%;height:100%;border:none;"></iframe>
+      <iframe id="emu-frame"></iframe>
       <div class="prev-info" id="prev-info"></div>
     </div>
   </div>
 
   <div class="rz" id="rz2"></div>
 
-  <!-- PANEL 3: C64 directory -->
-  <div id="mp">
-    <div class="c64hdr">
-      <span class="c64hdr-t" id="c64title">*** C64 DISK DIRECTORY ***</span>
-      <span class="c64hdr-s" id="c64sub">SELECT .D64 FROM LEFT</span>
+  <!-- RIGHT: C64 directory -->
+  <div class="panel" id="dp">
+    <div class="phdr">
+      <span class="phdr-t" id="dp-title">*** DISK DIRECTORY ***</span>
+      <span class="phdr-s" id="dp-sub">SELECT .D64</span>
     </div>
     <div id="c64s">
       <div id="c64e">
-        <span class="c64e-ico">💾</span>
-        <span>VYBERTE .D64 SOUBOR</span>
-        <span style="font-size:10px;opacity:.5">KLIKNI NA DISKETU V LEVEM PANELU</span>
+        <span class="c64e-ico">📀</span>
+        <span>SELECT .D64 FILE</span>
       </div>
     </div>
-    <div class="c64foot" id="c64foot" style="display:none">
-      <span>SOUBORŮ: <b id="fc">0</b></span>
-      <span>PRG: <b id="fp">0</b></span>
-      <span>VOLNO: <b id="ff">0</b> BLK</span>
+    <div class="pfoot" id="dpfoot" style="display:none">
+      <span>FILES:<b id="fc">0</b></span>
+      <span>PRG:<b id="fp">0</b></span>
+      <span>FREE:<b id="ff">0</b></span>
       <span style="flex:1"></span>
-      <span>ID: <b id="fid">—</b></span>
+      <span>ID:<b id="fid">—</b></span>
     </div>
   </div>
 
 </div>
 
 <div id="bot">
-  <span><span class="bk">RET</span><span class="bl">RUN IN EMULATOR</span></span>
+  <span><span class="bk">RET</span><span class="bl">RUN</span></span>
   <span><span class="bk">F5</span><span class="bl">LOAD FOLDER</span></span>
   <span class="bsp"></span>
   <span id="st">READY.</span>
@@ -336,736 +330,371 @@ body.emu-focus .c64foot { font-size: 9px; }
 <script>
 'use strict';
 
-// ══ D64 PARSER ═══════════════════════════════════════════════
-// Track sector counts (tracks 1-35)
+// ══ D64 PARSER ══════════════════════════════════════════════════
 const TSEC = [0,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,
               19,19,19,19,19,19,19,18,18,18,18,18,18,17,17,17,17,17];
 
-function secOffset(t, s) {
-  let o = 0;
-  for (let i = 1; i < t; i++) o += (TSEC[i] || 17) * 256;
-  return o + s * 256;
-}
-// PETSCII byte → display char (uppercase screen mode)
-// PETSCII layout (C64 unshifted mode):
-//   $20-$3F  : same as ASCII (space, !"#$%&'()*+,-./ 0-9 :;<=>?)
-//   $40       : @ sign
-//   $41-$5A  : A-Z (unshifted letters — PETSCII "lowercase" stored here)
-//   $5B       : [ 
-//   $5C       : £ (pound sign)
-//   $5D       : ]
-//   $5E       : ↑ (up arrow)
-//   $5F       : ← (left arrow)
-//   $60-$7F  : graphic chars (copies of $C0-$DF in display)
-//   $A0       : shift-space (non-breaking space, display as space)
-//   $A1-$BF  : graphic chars
-//   $C0       : graphic
-//   $C1-$DA  : A-Z (shifted uppercase letters)
-//   $DB-$DF  : graphic chars
-//   $E0-$FE  : copies of $A0-$BE
-//   $FF       : π (pi)
-function petDisplay(b) {
-  if (b === 0xA0 || b === 0x60) return ' ';  // shift-space
-  if (b >= 0x20 && b <= 0x5F) return String.fromCharCode(b); // $20-$5F: direct ASCII match incl. @A-Z[\]^_
-  if (b >= 0xC1 && b <= 0xDA) return String.fromCharCode(b - 0x80); // $C1-$DA → A-Z (shifted)
-  if (b >= 0x61 && b <= 0x7F) return String.fromCharCode(b - 0x20); // $61-$7F → mirrors of $C1-$DF (graphics, show as caps)
-  if (b === 0xFF) return '\u03C0'; // pi
-  // $A0-$BF, $DB-$FE: C64 graphic chars — show as unicode approximations
-  const gfx = {
-    0xA1:'\u2660', 0xA2:'\u258C', 0xA3:'\u2014', 0xA4:'',
-    0xA5:'', 0xA6:'\u258E', 0xA7:'\u258A', 0xA8:'',
-    0xA9:'', 0xAA:'\u25CB', 0xAB:'\u2020', 0xAC:'\u2665',
-    0xAE:'\u256E', 0xAF:'\u2570', 0xB0:'\u256F', 0xB1:'\u2572',
-    0xB2:'\u2571', 0xB3:'\u25CF', 0xB4:'\u2666', 0xB5:'\u256D',
-    0xB6:'\u2573', 0xB7:'\u25C6', 0xB8:'\u2663', 0xB9:'\u2501',
-    0xBA:'\u03C0', 0xBB:'\u25E5', 0xBC:'\u2022',
-  };
-  return gfx[b] || '\u00B7';
-}
+function secOff(t,s){let o=0;for(let i=1;i<t;i++)o+=(TSEC[i]||17)*256;return o+s*256;}
 
-// PETSCII byte → string for VICE -autostart filename
-// VICE receives the filename and compares against PETSCII on disk.
-// Rule: send the byte as-is if printable ASCII, lowercase for $41-$5A,
-// uppercase for $C1-$DA, literal char for $5B-$5F.
-function petVice(b) {
-  if (b === 0xA0) return ' ';
-  if (b >= 0x20 && b <= 0x40) return String.fromCharCode(b);         // space, punct, digits, @
-  if (b >= 0x41 && b <= 0x5A) return String.fromCharCode(b + 0x20);  // $41-$5A → a-z
-  if (b >= 0x5B && b <= 0x5F) return String.fromCharCode(b);         // [ \ ] ^ _  (keep as-is)
-  if (b >= 0xC1 && b <= 0xDA) return String.fromCharCode(b - 0x80);  // $C1-$DA → A-Z
-  if (b >= 0x61 && b <= 0x7F) return String.fromCharCode(b - 0x20);  // mirrors → A-Z
+function petDisp(b){
+  if(b===0x20)return ' ';
+  if(b>=0x21&&b<=0x3F)return String.fromCharCode(b);
+  if(b===0x40)return '@';
+  if(b>=0x41&&b<=0x5A)return String.fromCharCode(b);
+  if(b>=0x61&&b<=0x7A)return String.fromCharCode(b-0x20);
+  if(b>=0xC1&&b<=0xDA)return String.fromCharCode(b-0x80);
+  if(b>=0x01&&b<=0x1F)return String.fromCharCode(b+0x40);
+  return ' ';
+}
+function petVice(b){
+  if(b>=0x20&&b<=0x40)return String.fromCharCode(b);
+  if(b>=0x41&&b<=0x5A)return String.fromCharCode(b+0x20);
+  if(b>=0xC1&&b<=0xDA)return String.fromCharCode(b-0x80);
+  if(b>=0x61&&b<=0x7A)return String.fromCharCode(b-0x20);
+  if(b>=0x01&&b<=0x1F)return String.fromCharCode(b+0x40);
   return '';
 }
-
-function readPet(d, off, len) {
-  // Returns { display, vice }
-  // Filenames on C64 disks are stored in PETSCII.
-  // However some old mastering tools stored screencodes instead.
-  // Screencodes $00-$1F map to PETSCII $40-$5F (add $40).
-  // We detect this: if a byte is < $20 and not $00/$A0, treat as screencode.
-  let display = '', vice = '';
-  for (let i = 0; i < len; i++) {
-    let b = d[off + i];
-    if (b === 0xA0 || b === 0x00) break;
-    // Screencode range $01-$1F: convert to PETSCII by adding $40
-    if (b >= 0x01 && b <= 0x1F) b = b + 0x40;
-    display += petDisplay(b);
-    vice    += petVice(b);
+function readPet(d,off,len){
+  let disp='',vice='';
+  for(let i=0;i<len;i++){
+    let b=d[off+i];
+    if(b===0xA0||b===0x00)break;
+    if(b>=0x01&&b<=0x1F)b+=0x40;
+    disp+=petDisp(b);vice+=petVice(b);
   }
-  return { display: display || '?', vice: vice || '' };
+  return {disp:disp||'?',vice:vice||''};
 }
-const FTYPES = ['DEL','SEQ','PRG','USR','REL','CBM','DIR','???'];
 
-function parseD64(buf) {
-  const d = new Uint8Array(buf);
-  const bam = secOffset(18, 0);
-  const diskName = readPet(d, bam + 0x90, 16).display || 'UNNAMED';
-  let diskId = '';
-  for (let i = 0; i < 2; i++) {
-    const b = d[bam + 0xA0 + i];
-    diskId += (b === 0xA0 || b === 0) ? ' ' : petDisplay(b);
+const FTYPES=['DEL','SEQ','PRG','USR','REL','CBM','DIR','???'];
+
+function parseD64(buf){
+  const d=new Uint8Array(buf);
+  const bam=secOff(18,0);
+  const diskName=readPet(d,bam+0x90,16).disp||'UNNAMED';
+  const diskId=readPet(d,bam+0xA2,5).disp||'?????';
+  let free=0;
+  for(let t=1;t<=35;t++){
+    if(t===18)continue;
+    free+=d[bam+4+(t-1)*4];
   }
-  let free = 0;
-  for (let t = 1; t <= 35; t++) {
-    if (t === 18) continue;
-    const idx = bam + 4 + (t - 1) * 4;
-    if (idx < d.length) free += d[idx];
+  const entries=[];
+  let tr=18,sc=1;
+  for(let i=0;i<144;i++){
+    const base=secOff(tr,sc);
+    const off=base+i%8*32;
+    if(d[off+2]===0)continue;
+    const ft=d[off+2]&0x07;
+    const closed=!!(d[off+2]&0x80);
+    const locked=!!(d[off+2]&0x40);
+    const fn=readPet(d,off+5,16);
+    const blocks=(d[off+0x1E]|(d[off+0x1F]<<8));
+    entries.push({filename:fn.disp,fnVice:fn.vice,type:FTYPES[ft],blocks,closed,locked});
+    if((i+1)%8===0){const nb=secOff(tr,sc);const nt=d[nb],ns=d[nb+1];if(!nt)break;tr=nt;sc=ns;}
   }
-  const entries = [];
-  let tr = 18, se = 1;
-  const seen = new Set();
-  while (tr !== 0) {
-    const key = `${tr}:${se}`;
-    if (seen.has(key)) break;
-    seen.add(key);
-    const ms = TSEC[tr] || 17;
-    if (tr > 40 || se >= ms) break;
-    const so = secOffset(tr, se);
-    if (so + 256 > d.length) break;
-    for (let e = 0; e < 8; e++) {
-      const eo = so + e * 32;
-      const ft = d[eo + 2];
-      if (ft === 0x00) continue;
-      const rt     = ft & 0x07;
-      const closed = !!(ft & 0x80);
-      const locked = !!(ft & 0x40);
-      const fnPet  = readPet(d, eo + 0x05, 16);
-      const fn     = fnPet.display || '?';
-      const fnVice = fnPet.vice;
-      const blocks = d[eo + 0x1E] | (d[eo + 0x1F] << 8);
-      entries.push({ filename: fn, fnVice: fnVice, type: FTYPES[rt] || '???',
-                     rt, closed, locked, blocks,
-                     startTrack: d[eo + 0x03], startSec: d[eo + 0x04] });
+  return {diskName,diskId,free,entries,data:buf};
+}
+
+function readFileData(entry){
+  if(!curDisk)return null;
+  const d=new Uint8Array(curDisk.data);
+  const name=entry.fnVice.trim().toUpperCase();
+  let tr=18,sc=1;
+  for(let i=0;i<144;i++){
+    const off=secOff(tr,sc)+i%8*32;
+    if(d[off+2]===0)continue;
+    const ft=d[off+2]&0x07;
+    const fn=readPet(d,off+5,16);
+    if(fn.vice.trim().toUpperCase()===name&&FTYPES[ft]==='PRG'){
+      let ct=d[off+3],cs=d[off+4];
+      const bytes=[];
+      for(let guard=0;guard<1000&&ct!==0;guard++){
+        const so=secOff(ct,cs);
+        const nt=d[so],ns=d[so+1];
+        const len=nt===0?ns-1:254;
+        for(let j=2;j<2+len;j++)bytes.push(d[so+j]);
+        if(nt===0)break;
+        ct=nt;cs=ns;
+      }
+      return new Uint8Array(bytes);
     }
-    const nt = d[so], ns = d[so + 1];
-    if (nt === 0) break;
-    tr = nt; se = ns;
+    if((i+1)%8===0){const nb=secOff(tr,sc);const nt=d[nb],ns=d[nb+1];if(!nt)break;tr=nt;sc=ns;}
   }
-  return { diskName, diskId, free, entries, data: d };
+  return null;
 }
 
-// ══ C64 CHARSET (uppercase ROM, 128 chars × 8 bytes) ═════════
-const C64_CHARSET = new Uint8Array([
-  0x3C,0x66,0x6E,0x6E,0x60,0x62,0x3C,0x00, // @
-  0x18,0x3C,0x66,0x7E,0x66,0x66,0x66,0x00, // A
-  0x7C,0x66,0x66,0x7C,0x66,0x66,0x7C,0x00, // B
-  0x3C,0x66,0x60,0x60,0x60,0x66,0x3C,0x00, // C
-  0x78,0x6C,0x66,0x66,0x66,0x6C,0x78,0x00, // D
-  0x7E,0x60,0x60,0x78,0x60,0x60,0x7E,0x00, // E
-  0x7E,0x60,0x60,0x78,0x60,0x60,0x60,0x00, // F
-  0x3C,0x66,0x60,0x6E,0x66,0x66,0x3C,0x00, // G
-  0x66,0x66,0x66,0x7E,0x66,0x66,0x66,0x00, // H
-  0x3C,0x18,0x18,0x18,0x18,0x18,0x3C,0x00, // I
-  0x1E,0x0C,0x0C,0x0C,0x0C,0x6C,0x38,0x00, // J
-  0x66,0x6C,0x78,0x70,0x78,0x6C,0x66,0x00, // K
-  0x60,0x60,0x60,0x60,0x60,0x60,0x7E,0x00, // L
-  0x63,0x77,0x7F,0x6B,0x63,0x63,0x63,0x00, // M
-  0x66,0x76,0x7E,0x7E,0x6E,0x66,0x66,0x00, // N
-  0x3C,0x66,0x66,0x66,0x66,0x66,0x3C,0x00, // O
-  0x7C,0x66,0x66,0x7C,0x60,0x60,0x60,0x00, // P
-  0x3C,0x66,0x66,0x66,0x66,0x3C,0x0E,0x00, // Q
-  0x7C,0x66,0x66,0x7C,0x78,0x6C,0x66,0x00, // R
-  0x3C,0x66,0x60,0x3C,0x06,0x66,0x3C,0x00, // S
-  0x7E,0x18,0x18,0x18,0x18,0x18,0x18,0x00, // T
-  0x66,0x66,0x66,0x66,0x66,0x66,0x3C,0x00, // U
-  0x66,0x66,0x66,0x66,0x66,0x3C,0x18,0x00, // V
-  0x63,0x63,0x63,0x6B,0x7F,0x77,0x63,0x00, // W
-  0x66,0x66,0x3C,0x18,0x3C,0x66,0x66,0x00, // X
-  0x66,0x66,0x66,0x3C,0x18,0x18,0x18,0x00, // Y
-  0x7E,0x06,0x0C,0x18,0x30,0x60,0x7E,0x00, // Z
-  0x3C,0x30,0x30,0x30,0x30,0x30,0x3C,0x00, // [
-  0x18,0x3C,0x66,0x7E,0x66,0x66,0x66,0x00, // £
-  0x3C,0x0C,0x0C,0x0C,0x0C,0x0C,0x3C,0x00, // ]
-  0x18,0x3C,0x66,0x66,0x00,0x00,0x00,0x00, // ^
-  0x00,0x00,0x00,0x00,0x00,0x00,0x7E,0x00, // _
-  0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00, // space
-  0x18,0x18,0x18,0x18,0x00,0x00,0x18,0x00, // !
-  0x66,0x66,0x66,0x00,0x00,0x00,0x00,0x00, // "
-  0x66,0x66,0xFF,0x66,0xFF,0x66,0x66,0x00, // #
-  0x18,0x3E,0x60,0x3C,0x06,0x7C,0x18,0x00, // $
-  0x62,0x66,0x0C,0x18,0x30,0x66,0x46,0x00, // %
-  0x3C,0x66,0x3C,0x38,0x67,0x66,0x3F,0x00, // &
-  0x06,0x0C,0x18,0x00,0x00,0x00,0x00,0x00, // '
-  0x0C,0x18,0x30,0x30,0x30,0x18,0x0C,0x00, // (
-  0x30,0x18,0x0C,0x0C,0x0C,0x18,0x30,0x00, // )
-  0x00,0x66,0x3C,0xFF,0x3C,0x66,0x00,0x00, // *
-  0x00,0x18,0x18,0x7E,0x18,0x18,0x00,0x00, // +
-  0x00,0x00,0x00,0x00,0x00,0x18,0x18,0x30, // ,
-  0x00,0x00,0x00,0x7E,0x00,0x00,0x00,0x00, // -
-  0x00,0x00,0x00,0x00,0x00,0x18,0x18,0x00, // .
-  0x00,0x06,0x0C,0x18,0x30,0x60,0x00,0x00, // /
-  0x3C,0x66,0x6E,0x76,0x66,0x66,0x3C,0x00, // 0
-  0x18,0x38,0x18,0x18,0x18,0x18,0x7E,0x00, // 1
-  0x3C,0x66,0x06,0x0C,0x30,0x60,0x7E,0x00, // 2
-  0x3C,0x66,0x06,0x1C,0x06,0x66,0x3C,0x00, // 3
-  0x06,0x0E,0x1E,0x66,0x7F,0x06,0x06,0x00, // 4
-  0x7E,0x60,0x7C,0x06,0x06,0x66,0x3C,0x00, // 5
-  0x3C,0x66,0x60,0x7C,0x66,0x66,0x3C,0x00, // 6
-  0x7E,0x66,0x0C,0x18,0x18,0x18,0x18,0x00, // 7
-  0x3C,0x66,0x66,0x3C,0x66,0x66,0x3C,0x00, // 8
-  0x3C,0x66,0x66,0x3E,0x06,0x66,0x3C,0x00, // 9
-  0x00,0x00,0x18,0x00,0x00,0x18,0x00,0x00, // :
-  0x00,0x00,0x18,0x00,0x00,0x18,0x18,0x30, // ;
-  0x0E,0x18,0x30,0x60,0x30,0x18,0x0E,0x00, // <
-  0x00,0x00,0x7E,0x00,0x7E,0x00,0x00,0x00, // =
-  0x70,0x18,0x0C,0x06,0x0C,0x18,0x70,0x00, // >
-  0x3C,0x66,0x06,0x0C,0x18,0x00,0x18,0x00, // ?
-  // 0x40-0x7F: block/graphic chars (simplified)
-  0xFF,0x00,0x00,0x00,0x00,0x00,0x00,0x00, // horiz top
-  0xF0,0xF0,0xF0,0xF0,0xF0,0xF0,0xF0,0xF0, // left half
-  0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,0x0F, // right half
-  0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xFF, // horiz bot
-  0x00,0x00,0x00,0x00,0xFF,0xC0,0xC0,0xC0,
-  0xC0,0xC0,0xC0,0xFF,0x00,0x00,0x00,0x00,
-  0x00,0x7E,0x5A,0x18,0x18,0x18,0x18,0x00, // pi
-  0x18,0x18,0x18,0x18,0x18,0x18,0x18,0x18, // vert line
-  0xFF,0xFF,0x00,0x00,0x00,0x00,0x00,0x00,
-  0x00,0x00,0x00,0x00,0xFF,0xFF,0xC0,0xC0,
-  0xC0,0xC0,0xFF,0xFF,0x00,0x00,0x00,0x00,
-  0xAA,0x55,0xAA,0x55,0xAA,0x55,0xAA,0x55, // checkerboard
-  0x00,0x00,0x00,0x00,0x0F,0x0F,0x0F,0xFF,
-  0xFF,0x0F,0x0F,0x0F,0x0F,0x00,0x00,0x00,
-  0x18,0x18,0x18,0xFF,0x18,0x18,0x18,0x18,
-  0x18,0x18,0xFF,0xFF,0xFF,0x18,0x18,0x18,
-  0x00,0x00,0x00,0x00,0xF0,0xF0,0xF0,0xF0,
-  0xF0,0xF0,0xF0,0xF0,0x00,0x00,0x00,0x00,
-  0x33,0x33,0xCC,0xCC,0x33,0x33,0xCC,0xCC,
-  0x00,0x00,0xFF,0xFF,0x00,0x00,0xFF,0xFF,
-  0xF0,0xF0,0xF0,0xFF,0x00,0x00,0x00,0x00,
-  0x00,0x00,0x00,0xFF,0x0F,0x0F,0x0F,0x0F,
-  0x00,0x00,0x0F,0x0F,0xFF,0xFF,0x00,0x00,
-  0x00,0x00,0xF0,0xF0,0xFF,0xFF,0x00,0x00,
-  0xFF,0xF0,0xF0,0xF0,0xF0,0xF0,0xF0,0xF0,
-  0xFF,0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,
-  0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,0xFF,
-  0xF0,0xF0,0xF0,0xF0,0xF0,0xF0,0xF0,0xFF,
-  0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF, // solid block
-  0x00,0x00,0x00,0x00,0x00,0x00,0xFF,0xFF,
-  0xFF,0xFF,0x00,0x00,0x00,0x00,0x00,0x00,
-  0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00, // space2
-]);
+// ══ STATE ════════════════════════════════════════════════════════
+let curDisk=null,curDiskPath='',entries_ref=[],emuBlobUrl=null;
+let roots=[],expanded=new Set(),selNode=null,flatNodes=[];
 
-function charBits(sc) {
-  const inv = sc >= 128;
-  const idx = (sc & 0x7F) % 128;
-  const bits = new Uint8Array(8);
-  for (let r = 0; r < 8; r++)
-    bits[r] = inv ? (~C64_CHARSET[idx*8+r]) & 0xFF : C64_CHARSET[idx*8+r];
-  return bits;
-}
-
-// ══ PREVIEW RENDERER ═════════════════════════════════════════
-let curDisk = null; // parsed D64 info incl. .data
-
-function readFileData(entry) {
-  if (!curDisk) return null;
-  const d = curDisk.data;
-  let tr = entry.startTrack, se = entry.startSec;
-  const out = [];
-  const seen = new Set();
-  let limit = 0;
-  while (tr !== 0 && limit++ < 400) {
-    const key = `${tr}:${se}`;
-    if (seen.has(key) || tr > 40) break;
-    seen.add(key);
-    const off = secOffset(tr, se);
-    if (off + 256 > d.length) break;
-    const nt = d[off], ns = d[off+1];
-    const last = nt === 0;
-    const end = last ? ns : 256;
-    for (let i = 2; i < end; i++) out.push(d[off+i]);
-    if (last) break;
-    tr = nt; se = ns;
-  }
-  return new Uint8Array(out);
-}
-
-// Convert Uint8Array to base64
-function toBase64(bytes) {
-  let bin = '';
-  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
-  return btoa(bin);
-}
-
-// ══ EMULATORJS / VICE_X64SC ══════════════════════════════════
-// EmulatorJS wraps libretro vice_x64sc compiled to WASM.
-// We pass the entire D64 image as a Blob URL → EJS_gameUrl.
-// The emulator runs inside a srcdoc iframe so it shares the
-// same origin and can load CDN scripts without CORS issues.
-//
-// SharedArrayBuffer (threads) requires COOP/COEP headers —
-// not available on file://, so we use single-threaded mode.
-
-let emuBlobUrl  = null;
-let emuBlobUrl2 = null;
-
-function buildSrcdoc(gameUrl, gameName) {
-  // Use JSON.stringify for all values injected into JS — 100% safe escaping
-  var js = [
-    'window.EJS_player        = ' + JSON.stringify('#game') + ';',
-    'window.EJS_core          = ' + JSON.stringify('vice_x64sc') + ';',
-    'window.EJS_gameUrl       = ' + JSON.stringify(gameUrl) + ';',
-    'window.EJS_gameName      = ' + JSON.stringify(gameName) + ';',
-    'window.EJS_pathtodata    = ' + JSON.stringify('https://cdn.emulatorjs.org/stable/data/') + ';',
-    'window.EJS_startOnLoaded = true;',
-    'window.EJS_coreSettings  = {"vice_keyboard_passthrough":"enabled"};',
-    'window.EJS_language      = "en-US";',
-    'window.EJS_backgroundColor = "#000000";',
-    'window.EJS_color         = "#3535c0";',
-    'window.EJS_AdUrl         = "";',
-    'window.EJS_Buttons       = {playPause:false,restart:true,mute:true,' +
-      'settings:true,fullscreen:true,saveState:true,loadState:true,' +
-      'screenRecord:false,gamepad:true,cheat:false,volume:true};',
+// ══ EMULATOR ════════════════════════════════════════════════════
+function buildSrcdoc(gameUrl,gameName){
+  const js=[
+    'window.EJS_player='+JSON.stringify('#game')+';',
+    'window.EJS_core='+JSON.stringify('vice_x64sc')+';',
+    'window.EJS_gameUrl='+JSON.stringify(gameUrl)+';',
+    'window.EJS_gameName='+JSON.stringify(gameName)+';',
+    'window.EJS_pathtodata='+JSON.stringify('https://cdn.emulatorjs.org/stable/data/')+';',
+    'window.EJS_startOnLoaded=true;',
+    'window.EJS_coreSettings={"vice_keyboard_passthrough":"enabled"};',
+    'window.EJS_language="en-US";',
+    'window.EJS_backgroundColor="#000000";',
+    'window.EJS_color="#3535c0";',
+    'window.EJS_AdUrl="";',
+    'window.EJS_Buttons={playPause:false,restart:true,mute:true,settings:true,fullscreen:true,saveState:true,loadState:true,screenRecord:false,gamepad:true,cheat:false,volume:true};',
   ].join('\n');
-
-  var onStartJs = [
-    'window.EJS_onGameStart = function() {',
-    '  var tries = 0;',
-    '  var iv = setInterval(function() {',
-    '    if (++tries > 60) { clearInterval(iv); return; }',
-    '    var e = window.EJS_emulator;',
-    '    if (!e || !e.settingsLoaded) return;',
+  const onStart=[
+    'window.EJS_onGameStart=function(){',
+    '  var tries=0,iv=setInterval(function(){',
+    '    if(++tries>60){clearInterval(iv);return;}',
+    '    var e=window.EJS_emulator;',
+    '    if(!e||!e.settingsLoaded)return;',
     '    clearInterval(iv);',
-    '    try {',
-    '      e.changeSettingOption("vice_physical_keyboard_pass_through", "enabled");',
-    '      e.changeSettingOption("keyboardInput", "enabled");',
-    '      e.changeSettingOption("vice_joyport", "2");',
-    '    } catch(ex) {}',
-    '  }, 250);',
+    '    try{e.changeSettingOption("vice_physical_keyboard_pass_through","enabled");',
+    '    e.changeSettingOption("keyboardInput","enabled");',
+    '    e.changeSettingOption("vice_joyport","2");}catch(ex){}',
+    '  },250);',
     '};',
   ].join('\n');
-
-  return '<!DOCTYPE html><html><head><meta charset="UTF-8">' +
-    '<style>*{margin:0;padding:0;box-sizing:border-box}' +
-    'html,body{width:100%;height:100%;background:#000;overflow:hidden}' +
-    '#game{width:100%;height:100%}
-</style>' +
-    '</head><body><div id="game"></div>' +
-    '<script>\n' + js + '\n' + onStartJs + '\n<\/script>' +
-    '<script src="https://cdn.emulatorjs.org/stable/data/loader.js"><\/script>' +
-    '</body></html>';
+  return '<!DOCTYPE html><html><head><meta charset="UTF-8">'
+    +'<style>*{margin:0;padding:0;box-sizing:border-box}html,body{width:100%;height:100%;background:#000;overflow:hidden}#game{width:100%;height:100%}</style>'
+    +'</head><body><div id="game"></div>'
+    +'<script>\n'+js+'\n'+onStart+'\n<\/script>'
+    +'<script src="https://cdn.emulatorjs.org/stable/data/loader.js"><\/script>'
+    +'</body></html>';
 }
 
-function launchEmulator(entry) {
-  document.getElementById('prevtitle').textContent = entry.filename;
-  document.getElementById('prevsub').textContent   = entry.type + ' · ' + entry.blocks + ' BLK';
+function launchEmulator(entry){
+  if(!curDisk){setS('NO DISK');return;}
+  if(emuBlobUrl){URL.revokeObjectURL(emuBlobUrl);emuBlobUrl=null;}
 
-  if (!curDisk) { emuMsg('NO DISK', true); return; }
+  const isFirst=entries_ref.length>0&&entries_ref[0]===entry;
+  let gameUrl,gameName;
 
-  if (emuBlobUrl)  { URL.revokeObjectURL(emuBlobUrl);  emuBlobUrl  = null; }
-  if (emuBlobUrl2) { URL.revokeObjectURL(emuBlobUrl2); emuBlobUrl2 = null; }
-
-  const isFirst = entries_ref.length > 0 && entries_ref[0] === entry;
-
-  let gameUrl, gameName;
-
-  if (isFirst) {
-    const blob = new Blob([curDisk.data], { type: 'application/octet-stream' });
-    emuBlobUrl = URL.createObjectURL(blob);
-    gameUrl  = emuBlobUrl;
-    gameName = 'disk.d64';
+  if(isFirst){
+    const blob=new Blob([curDisk.data],{type:'application/octet-stream'});
+    emuBlobUrl=URL.createObjectURL(blob);
+    gameUrl=emuBlobUrl;gameName='disk.d64';
   } else {
-    const prg = readFileData(entry);
-    if (!prg || prg.length === 0) { emuMsg('EMPTY FILE', true); return; }
-    const blob = new Blob([prg], { type: 'application/octet-stream' });
-    emuBlobUrl = URL.createObjectURL(blob);
-    const fname = (entry.fnVice || entry.filename).trim();
-    gameUrl  = emuBlobUrl;
-    gameName = fname + '.prg';
+    const prg=readFileData(entry);
+    if(!prg||!prg.length){setS('EMPTY FILE');return;}
+    const blob=new Blob([prg],{type:'application/octet-stream'});
+    emuBlobUrl=URL.createObjectURL(blob);
+    gameUrl=emuBlobUrl;
+    gameName=(entry.fnVice||entry.filename).trim()+'.prg';
   }
 
-  setFocus('emu-focus');
+  document.getElementById('ep-title').textContent=entry.filename;
+  document.getElementById('ep-sub').textContent=entry.type+' · '+entry.blocks+' BLK';
+  document.getElementById('prev-info').textContent=isFirst?'D64':'PRG·'+entry.blocks+'BLK';
+  document.getElementById('emu-placeholder').style.display='none';
 
-  document.getElementById('emu-placeholder').style.display = 'none';
-  document.getElementById('prev-info').textContent =
-    (isFirst ? 'D64 · FULL DISK' : 'PRG · ' + entry.blocks + ' BLK');
+  // shrink side panels
+  document.body.classList.add('emu-focus');
 
-  // Wait for resize animation to finish before launching emulator
-  setTimeout(() => {
-    const old = document.getElementById('emu-frame');
-    const frame = document.createElement('iframe');
-    frame.id = 'emu-frame';
-    frame.style.cssText = 'display:block;width:100%;height:100%;border:none;';
-    old.parentNode.replaceChild(frame, old);
-    frame.srcdoc = buildSrcdoc(gameUrl, gameName);
-  }, 350);
+  // always fresh iframe
+  const old=document.getElementById('emu-frame');
+  const frame=document.createElement('iframe');
+  frame.id='emu-frame';
+  frame.style.cssText='position:absolute;inset:0;width:100%!important;height:100%!important;border:none;display:block;';
+  old.parentNode.replaceChild(frame,old);
+  setTimeout(()=>{frame.srcdoc=buildSrcdoc(gameUrl,gameName);},50);
 }
 
-function emuMsg(msg, isErr) {
-  document.getElementById('emu-frame').style.display = 'none';
-  const ph = document.getElementById('emu-placeholder');
-  ph.style.display = 'flex';
-  ph.innerHTML =
-    '<span style="font-size:30px;opacity:.3">' + (isErr ? '⚠️' : '⏳') + '</span>' +
-    '<span>' + msg + '</span>' +
-    '<span style="font-size:9px;opacity:.25;margin-top:6px">cdn.emulatorjs.org · vice_x64sc</span>';
-}
+// ══ DIRECTORY RENDERER ══════════════════════════════════════════
+function E(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function tc(t){return{PRG:'t-prg',SEQ:'t-seq',REL:'t-rel',USR:'t-usr',DIR:'t-dir',DEL:'t-del',CBM:'t-cbm','???':'t-del'}[t]||'t-del';}
 
-// ══ DIRECTORY RENDERER ═══════════════════════════════════════
-function E(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-function tclass(t){ return {PRG:'t-prg',SEQ:'t-seq',REL:'t-rel',USR:'t-usr',
-                             DIR:'t-dir',DEL:'t-del',CBM:'t-cbm'}[t]||''; }
+function renderDir(info,name){
+  entries_ref=info.entries;
+  const lines=[];
+  const dn=info.diskName.padEnd(16,' ');
+  lines.push('<div class="dl"><span class="d-blk">    0 </span><span class="d-id">0 &quot;</span><span class="rv">'+E(dn)+'</span><span class="d-id">&quot; '+E(info.diskId)+'</span></div>');
+  info.entries.forEach((e,i)=>{
+    const blk=String(e.blocks).padStart(5,' ');
+    const fn=e.filename.padEnd(16,' ');
+    const splat=e.closed?'':'<span class="t-nc">*</span>';
+    const lock=e.locked?'<span class="t-lk">&lt;</span>':'';
+    lines.push('<div class="dl entry" data-i="'+i+'"><span class="d-blk">'+blk+' </span><span class="d-fn">&quot;'+E(fn)+'&quot; </span>'+splat+'<span class="'+tc(e.type)+'">'+E(e.type)+'</span>'+lock+'</div>');
+  });
+  lines.push('<div class="dl"><span class="d-blk">'+String(info.free).padStart(5,' ')+' </span><span class="d-free">BLOCKS FREE.</span><span class="cur"></span></div>');
 
-let curDiskPath = ''; // relative path of loaded .d64
-
-function renderDir(info, filename) {
-  const { diskName, diskId, free, entries } = info;
-  document.getElementById('c64title').textContent = diskName;
-  document.getElementById('c64sub').textContent   = filename;
-
-  const lines = [];
-  const dn = diskName.padEnd(16,' ');
-  const did = diskId.padEnd(2,' ') + ' 2A';
-  lines.push(
-    `<div class="dl">` +
-    `<span class="d-blk">    0 </span>` +
-    `<span class="d-id">"</span><span class="rv">${E(dn)}</span><span class="d-id">" ${E(did)}</span>` +
-    `</div>`
-  );
-
-  entries.forEach((e, i) => {
-    const blk  = String(e.blocks).padStart(5,' ');
-    const fn   = e.filename.padEnd(16,' ');
-    const tc   = tclass(e.type);
-    const splat = e.closed ? '' : `<span class="t-nc">*</span>`;
-    const lock  = e.locked ? `<span class="t-lk">&lt;</span>` : '';
-    lines.push(
-      `<div class="dl entry" data-i="${i}">` +
-      `<span class="d-blk">${blk} </span>` +
-      `<span class="d-fn">"${E(fn)}" </span>` +
-      `${splat}<span class="d-type ${tc}">${E(e.type)}</span>${lock}` +
-      `</div>`
-    );
+  const scr=document.getElementById('c64s');
+  scr.innerHTML=lines.join('');
+  scr.scrollTop=0;
+  scr.querySelectorAll('.dl.entry').forEach(el=>{
+    el.addEventListener('click',()=>launchEmulator(info.entries[+el.dataset.i]));
   });
 
-  lines.push(
-    `<div class="dl">` +
-    `<span class="d-blk">${String(free).padStart(5,' ')} </span>` +
-    `<span class="d-free">BLOCKS FREE.</span><span class="cur"></span>` +
-    `</div>`
-  );
-
-  const scr = document.getElementById('c64s');
-  scr.innerHTML = lines.join('');
-  scr.scrollTop = 0;
-
-  // Hover → preview, Click → copy VICE command
-  scr.querySelectorAll('.dl.entry').forEach(el => {
-    const entry = entries[+el.dataset.i];
-    el.addEventListener('click', () => {
-      launchEmulator(entry);
-    });
-  });
-
-  const prg = entries.filter(e => e.type==='PRG').length;
-  document.getElementById('fc').textContent = entries.length;
-  document.getElementById('fp').textContent = prg;
-  document.getElementById('ff').textContent = free;
-  document.getElementById('fid').textContent = diskId.trim() || '??';
-  document.getElementById('c64foot').style.display = 'flex';
+  document.getElementById('dp-title').textContent='*** '+info.diskName.trim()+' ***';
+  document.getElementById('dp-sub').textContent=info.entries.length+' FILES';
+  document.getElementById('fc').textContent=info.entries.length;
+  document.getElementById('fp').textContent=info.entries.filter(e=>e.type==='PRG').length;
+  document.getElementById('ff').textContent=info.free;
+  document.getElementById('fid').textContent=info.diskId.trim()||'??';
+  document.getElementById('dpfoot').style.display='flex';
+  setS(name+' — '+info.entries.length+' FILES, '+info.free+' FREE');
 }
 
-// ══ COPY VICE COMMAND ════════════════════════════════════════
-function copyViceCmd(entry) {
-  // x64sc -autostart "cesta\k\disku.d64:NAZEVSOUBORU"
-  const diskWin = curDiskPath.replace(/\//g, '\\');
-  const cmd = `x64sc -autostart "${diskWin}:${(entry.fnVice || entry.filename).trimEnd()}"`;
-  navigator.clipboard.writeText(cmd).then(() => {
-    toast(cmd);
-    // flash the row
-    document.querySelectorAll('.dl.entry').forEach(el => {
-      if (entries_ref[+el.dataset.i] === entry) {
-        el.classList.add('copied');
-        setTimeout(() => el.classList.remove('copied'), 600);
-      }
-    });
-  }).catch(() => toast('NELZE KOPIROVAT — zkus HTTPS', true));
-}
-let entries_ref = [];
-
-// ══ TOAST ════════════════════════════════════════════════════
-let toastTmr = null;
-function toast(msg, err=false) {
-  const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.style.borderColor = err ? '#d83838' : '#38d080';
-  el.style.color        = err ? '#d83838' : '#38d080';
-  el.style.background   = err ? '#1e0e0e' : '#0e1e0e';
-  el.classList.add('show');
-  if (toastTmr) clearTimeout(toastTmr);
-  toastTmr = setTimeout(() => el.classList.remove('show'), 3000);
-}
-
-// ══ LOAD D64 ════════════════════════════════════════════════
-function loadD64(file, name) {
-  setS(`Načítám ${name}…`);
-  curDiskPath = file.webkitRelativePath || file.name;
-  const r = new FileReader();
-  r.onload = ev => {
-    try {
-      const info = parseD64(ev.target.result);
-      curDisk = info;
-      entries_ref = info.entries;
-      renderDir(info, name);
-      setS(`${name} — ${info.entries.length} souborů, ${info.free} bloků volno`);
-    } catch(err) {
-      setS(`Chyba: ${err.message}`);
-    }
+// ══ LOAD D64 ════════════════════════════════════════════════════
+function loadD64(file,name){
+  setS('LOADING '+name+'...');
+  curDiskPath=file.webkitRelativePath||file.name;
+  const r=new FileReader();
+  r.onload=ev=>{
+    try{const info=parseD64(ev.target.result);curDisk=info;renderDir(info,name);}
+    catch(err){setS('ERROR: '+err.message);}
   };
   r.readAsArrayBuffer(file);
 }
 
-// ══ PC FILE TREE ════════════════════════════════════════════
-let roots=[], expanded=new Set(), selNode=null, flatNodes=[];
+// ══ FILE TREE ════════════════════════════════════════════════════
+function decodePath(p){try{return decodeURIComponent(p.replace(/\+/g,' '));}catch(e){return p;}}
 
-function decodePath(p) {
-  try { return decodeURIComponent(p.replace(/\+/g, ' ')); } catch(e) { return p; }
-}
-
-function buildTree(fileList) {
-  const files = Array.from(fileList);
-  if (!files.length) return [];
-  const mob = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || window.innerWidth <= 900;
-
-  if (mob) {
-    // Mobile: flat list of D64 files only — just the filename, no folders
-    const nodes = [];
-    files.forEach(f => {
-      if (!f.name.toLowerCase().endsWith('.d64')) return;
-      const name = decodePath(f.name);
-      nodes.push({ path: name, name, depth:0, isFolder:false, isD64:true, children:[], size:f.size, file:f });
+function buildTree(files){
+  const rootMap={};
+  Array.from(files).forEach(f=>{
+    const raw=f.webkitRelativePath||f.name;
+    const parts=decodePath(raw).split('/');
+    let cur=rootMap;
+    parts.forEach((part,i)=>{
+      if(!cur[part])cur[part]={name:part,children:{},file:null,path:parts.slice(0,i+1).join('/')};
+      if(i===parts.length-1)cur[part].file=f;
+      cur=cur[part].children;
     });
-    nodes.sort((a,b) => a.name.localeCompare(b.name, undefined, {numeric:true}));
-    return nodes;
-  }
-
-  // Desktop: full folder tree
-  const nm = {};
-  const get = parts => {
-    const key = parts.join('/');
-    if (!nm[key]) nm[key] = { path:key, name:parts[parts.length-1],
-      depth:parts.length-1, isFolder:false, isD64:false, children:[], size:0, file:null };
-    return nm[key];
-  };
-  files.forEach(f => {
-    const parts = (f.webkitRelativePath || f.name).split('/').map(decodePath);
-    for (let i=1; i<=parts.length; i++) {
-      const n = get(parts.slice(0,i));
-      if (i < parts.length) { n.isFolder = true; }
-      else { n.isD64 = f.name.toLowerCase().endsWith('.d64'); n.size=f.size; n.file=f; }
-      if (i > 1) {
-        const p = get(parts.slice(0,i-1));
-        if (!p.children.find(c=>c.path===n.path)) p.children.push(n);
-      }
-    }
   });
-  function srt(ns) {
-    ns.sort((a,b) => {
-      if (a.isFolder!==b.isFolder) return a.isFolder?-1:1;
-      if (a.isD64!==b.isD64) return a.isD64?-1:1;
+  function toArr(map,depth){
+    return Object.values(map).map(n=>{
+      const ch=toArr(n.children,depth+1);
+      const isD64=n.name.toLowerCase().endsWith('.d64');
+      return{name:n.name,path:n.path,depth,isD64,file:n.file,children:ch};
+    }).sort((a,b)=>{
+      if(a.isD64!==b.isD64)return a.isD64?1:-1;
       return a.name.localeCompare(b.name,undefined,{numeric:true});
     });
-    ns.forEach(n => n.children.length && srt(n.children));
   }
-  const rootName = decodePath((files[0].webkitRelativePath||files[0].name).split('/')[0]);
-  const rn = nm[rootName];
-  if (!rn) return [];
-  rn.isFolder=true; srt(rn.children); return [rn];
+  return toArr(rootMap,0);
 }
 
-function hasMatch(n,f){ if(!f)return true; if(n.name.toLowerCase().includes(f))return true; return n.children.some(c=>hasMatch(c,f)); }
-
-function flatten(nodes,res=[],f=''){
-  const fl=f.toLowerCase();
-  nodes.forEach(n=>{
-    const m=!fl||n.name.toLowerCase().includes(fl);
-    const cm=fl?hasMatch(n,fl):true;
-    if(!fl||m||(n.isFolder&&cm)){
-      res.push(n);
-      if(n.isFolder&&(expanded.has(n.path)||(fl&&cm))) flatten(n.children,res,f);
-    }
-  });
+function flattenTree(nodes,res=[]){
+  nodes.forEach(n=>{res.push(n);if(expanded.has(n.path)&&n.children.length)flattenTree(n.children,res);});
   return res;
 }
 
-function fmtSz(b){ if(!b)return''; if(b<1024)return b+'B'; if(b<1048576)return(b/1024).toFixed(0)+'K'; return(b/1048576).toFixed(1)+'M'; }
-function Esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-
 function renderTree(){
-  const f=document.getElementById('tflt').value;
-  flatNodes=flatten(roots,[],f);
-  let h='';
+  const filter=document.getElementById('tflt').value.toUpperCase();
+  flatNodes=flattenTree(roots);
+  if(filter)flatNodes=flatNodes.filter(n=>n.name.toUpperCase().includes(filter));
+  const frag=document.createDocumentFragment();
   flatNodes.forEach((n,i)=>{
-    const ind=n.depth*12, hc=n.isFolder&&n.children.length>0;
-    const exp=expanded.has(n.path)||(f&&hasMatch(n,f.toLowerCase()));
-    // PETSCII-style tree chars: folder open=▼ closed=▶, files=·
-    const tog=hc?(exp?'▼':'▶'):'·';
-    const nc=n.isFolder?'fld':(n.isD64?'d64':'fil');
-    const sel=(selNode&&selNode.path===n.path)?' sel':'';
-    // D64 prefix marker, size for files
-    const prefix=n.isD64?'•':' ';
-    const sz=(!n.isFolder&&n.size)?`<span class="nsz">${fmtSz(n.size)}</span>`:'';
-    const name=n.name.toUpperCase();
-    h+=`<div class="tn${sel}" data-i="${i}" style="padding-left:${4+ind}px">` +
-       `<span class="ntog">${tog}</span>` +
-       `<span class="nn ${nc}">${prefix}${Esc(name)}</span>${sz}</div>`;
-  });
-  document.getElementById('tree').innerHTML=h;
-  document.getElementById('tree').querySelectorAll('.tn').forEach(el=>{
-    el.addEventListener('click',()=>{
-      const n=flatNodes[+el.dataset.i]; if(!n)return;
-      if(n.isFolder){ expanded.has(n.path)?expanded.delete(n.path):expanded.add(n.path); renderTree(); }
-      else { selNode=n; renderTree(); if(n.isD64&&n.file) loadD64(n.file,n.name); else setS(`${n.name} — není .d64`); }
+    const row=document.createElement('div');
+    row.className='tn'+(selNode===n?' sel':'');
+    const hasKids=n.children&&n.children.length;
+    const tog=document.createElement('span');
+    tog.className='ntog';
+    tog.style.marginLeft=(n.depth*12)+'px';
+    tog.textContent=hasKids?(expanded.has(n.path)?'▾':'▸'):'';
+    const nm=document.createElement('span');
+    nm.className='nn '+(n.isD64?'d64':hasKids?'fld':'fil');
+    nm.textContent=n.name;
+    row.appendChild(tog);row.appendChild(nm);
+    row.addEventListener('click',()=>{
+      if(hasKids){expanded.has(n.path)?expanded.delete(n.path):expanded.add(n.path);renderTree();}
+      if(n.isD64&&n.file){selNode=n;renderTree();loadD64(n.file,n.name);}
     });
+    frag.appendChild(row);
   });
+  const tree=document.getElementById('tree');
+  tree.innerHTML='';tree.appendChild(frag);
 }
 
-function countTree(nodes,s={f:0,d:0,x:0}){
-  nodes.forEach(n=>{if(n.isFolder){s.f++;countTree(n.children,s);}else if(n.isD64)s.d++;else s.x++;});
-  return s;
+function loadFolder(fileList){
+  roots=buildTree(fileList);
+  expanded=new Set();
+  if(roots.length)expanded.add(roots[0].path);
+  selNode=null;
+  document.getElementById('dz').style.display='none';
+  document.getElementById('tb').style.display='flex';
+  document.getElementById('tw').style.display='block';
+  document.getElementById('lpfoot').style.display='flex';
+  let d64=0,dirs=0;
+  const count=ns=>ns.forEach(n=>{if(n.isD64)d64++;else if(n.children.length)dirs++;count(n.children);});
+  count(roots);
+  document.getElementById('pf').textContent=dirs;
+  document.getElementById('pd').textContent=d64;
+  document.getElementById('pcpath').textContent=roots[0]?.name||'';
+  document.getElementById('lp-sub').textContent=d64+' D64';
+  renderTree();
+  setS('LOADED: '+d64+' D64 FILES');
 }
 
-function loadFolder(fl){
-  // Show spinner in status bar
-  const st = document.getElementById('st');
-  st.innerHTML = '<span class="spinning">◈</span> LOADING...';
-  requestAnimationFrame(()=>requestAnimationFrame(()=>{
-    roots=buildTree(fl); expanded=new Set();
-    if(roots.length && roots[0].isFolder) expanded.add(roots[0].path);
-    document.getElementById('dz').style.display='none';
-    document.getElementById('tw').style.display='block';
-    document.getElementById('tb').style.display='flex';
-    const s=countTree(roots);
-    document.getElementById('pf').textContent=s.f;
-    document.getElementById('pd').textContent=s.d;
-    document.getElementById('px').textContent=s.x;
-    document.getElementById('pcpath').textContent=roots[0]?.name||'—';
-    renderTree();
-    setS('LOADED: ' + s.d + ' D64, ' + s.f + ' DIRS');
-  }));
-}
-
-// Folder open via input
-const fi = document.createElement('input');
-fi.type='file'; fi.setAttribute('webkitdirectory',''); fi.multiple=true; fi.style.display='none';
+// ══ FILE INPUT ═══════════════════════════════════════════════════
+const fi=document.createElement('input');
+fi.type='file';fi.setAttribute('webkitdirectory','');fi.multiple=true;fi.style.display='none';
 document.body.appendChild(fi);
-fi.addEventListener('change', e=>{ if(e.target.files.length) loadFolder(e.target.files); });
+fi.addEventListener('change',e=>{if(e.target.files.length)loadFolder(e.target.files);});
 
-document.getElementById('dz').addEventListener('click', ()=>fi.click());
+// dz click → open folder
+document.getElementById('dz').addEventListener('click',()=>fi.click());
 
-// Drag & drop
-const lpEl=document.getElementById('lp'), dzEl=document.getElementById('dz');
-lpEl.addEventListener('dragover', e=>{e.preventDefault();dzEl.classList.add('on');});
+// drag & drop on lp
+const lpEl=document.getElementById('lp');
+const dzEl=document.getElementById('dz');
+lpEl.addEventListener('dragover',e=>{e.preventDefault();dzEl.classList.add('on');});
 lpEl.addEventListener('dragenter',e=>{e.preventDefault();});
 lpEl.addEventListener('dragleave',e=>{if(!lpEl.contains(e.relatedTarget))dzEl.classList.remove('on');});
 lpEl.addEventListener('drop',e=>{e.preventDefault();dzEl.classList.remove('on');if(e.dataTransfer.files.length)loadFolder(e.dataTransfer.files);});
 
-// Toolbar buttons
+// toolbar
 document.getElementById('tflt').addEventListener('input',renderTree);
 document.getElementById('btnC').addEventListener('click',()=>{expanded.clear();if(roots.length)expanded.add(roots[0].path);renderTree();});
 document.getElementById('btnE').addEventListener('click',()=>{function ea(n){expanded.add(n.path);n.children.forEach(ea);}roots.forEach(ea);renderTree();});
 document.getElementById('btnR').addEventListener('click',()=>fi.click());
 document.addEventListener('keydown',e=>{if(e.key==='F5'){e.preventDefault();fi.click();}});
 
-// ══ RESIZE ══════════════════════════════════════════════════
-function makeResizer(rzId, leftEl, rightEl, invertDelta) {
-  const rz = document.getElementById(rzId);
-  let down=false, x0=0, w0=0;
-  rz.addEventListener('mousedown', e=>{
-    down=true; x0=e.clientX; w0=leftEl.offsetWidth;
-    rz.classList.add('on'); document.body.style.cssText='cursor:col-resize;user-select:none';
+// ══ RESIZERS ════════════════════════════════════════════════════
+function makeResizer(rzId,el,invert){
+  const rz=document.getElementById(rzId);
+  if(!rz)return;
+  let down=false,x0=0,w0=0;
+  rz.addEventListener('mousedown',e=>{
+    down=true;x0=e.clientX;w0=el.offsetWidth;
+    rz.classList.add('on');document.body.style.cssText='cursor:col-resize;user-select:none';
   });
-  document.addEventListener('mousemove', e=>{
+  document.addEventListener('mousemove',e=>{
     if(!down)return;
-    const delta = invertDelta ? (x0-e.clientX) : (e.clientX-x0);
-    leftEl.style.width = Math.max(140, Math.min(window.innerWidth-400, w0+delta))+'px';
+    const delta=invert?(x0-e.clientX):(e.clientX-x0);
+    el.style.width=Math.max(120,Math.min(window.innerWidth-400,w0+delta))+'px';
   });
   document.addEventListener('mouseup',()=>{
-    if(!down)return; down=false; rz.classList.remove('on'); document.body.style.cssText='';
+    if(!down)return;down=false;rz.classList.remove('on');document.body.style.cssText='';
   });
 }
-makeResizer('rz1', document.getElementById('lp'),  null, false);
-makeResizer('rz2', document.getElementById('mp'),  null, true);
+makeResizer('rz1',document.getElementById('lp'),false);
+makeResizer('rz2',document.getElementById('dp'),true);
 
-// ══ CLOCK & STATUS ══════════════════════════════════════════
-function setS(m){const e=document.getElementById('st');e.innerHTML='';e.textContent=String(m).toUpperCase();}
+// ══ FOCUS ════════════════════════════════════════════════════════
+// clicking tree or directory (not on a game entry) → restore panels
+document.getElementById('tw').addEventListener('click',()=>document.body.classList.remove('emu-focus'));
+document.getElementById('c64s').addEventListener('click',e=>{
+  if(!e.target.closest('.dl.entry'))document.body.classList.remove('emu-focus');
+});
+
+// ══ CLOCK & STATUS ═══════════════════════════════════════════════
+function setS(m){document.getElementById('st').textContent=String(m).toUpperCase();}
 function tick(){
   const n=new Date();
-  document.getElementById('clk').textContent=
-    [n.getHours(),n.getMinutes(),n.getSeconds()].map(v=>String(v).padStart(2,'0')).join(':');
+  document.getElementById('clk').textContent=[n.getHours(),n.getMinutes(),n.getSeconds()].map(v=>String(v).padStart(2,'0')).join(':');
 }
-tick(); setInterval(tick,1000);
+tick();setInterval(tick,1000);
 
-
-
-// ══ MOBILE MODE SWITCHING ════════════════════════════════════
-const isMobile = () => /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || window.innerWidth <= 900;
-
-function getEmuFrame() {
-  return document.getElementById('emu-frame');
-}
-
-function freshEmuFrame() {
-  // Just return existing frame — we reset it in launchEmulator
-  return document.getElementById('emu-frame');
-}
-
-function mobBrowse() {
-  // No longer used — three panel layout always visible
-}
-
-function mobPlay() {
-  // No longer used — three panel layout always visible
-}
-
-// Lock to landscape on mobile
-if (isMobile() && screen.orientation && screen.orientation.lock) {
+// ══ MOBILE ═══════════════════════════════════════════════════════
+if(/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)&&screen.orientation&&screen.orientation.lock){
   screen.orientation.lock('landscape').catch(()=>{});
 }
 
-// ══ FOCUS LAYOUT ════════════════════════════════════════════
-function setFocus(mode) {
-  if (mode === 'emu-focus') {
-    document.body.classList.add('emu-focus');
-  } else {
-    document.body.classList.remove('emu-focus');
-  }
-}
-
-// Click on directory panel → browse mode
-document.getElementById('mp').addEventListener('click', (e) => {
-  if (e.target.closest('.dl.entry')) return;
-  setFocus('browse-focus');
-});
-
-setFocus('browse-focus');
-
-// Back button → return to browse
-document.getElementById('mob-back').addEventListener('click', mobBrowse);
-
-// ══ PWA — SERVICE WORKER ════════════════════════════════════
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./sw.js').catch(() => {});
+// ══ SERVICE WORKER ════════════════════════════════════════════════
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('./sw.js').catch(()=>{});
 }
 </script>
 </body>
