@@ -221,14 +221,7 @@ body.play-mode #rz2 { display:none; }
   #bot { height:18px; }
   .logo { font-size:9px; }
   .bk, .bl, #st { font-size:7px; }
-  .phdr { font-size:10px; padding:0 6px; }
-  .pfoot { font-size:9px; padding:0 6px; gap:6px; }
   .nn { font-size:11px; }
-  #c64s { padding:6px 10px; font-size:16px; line-height:20px; }
-  .dl { line-height:20px; }
-  .d-blk { display:none; }
-  .d-free { display:none; }
-  .cur { height:14px; }
 }
 </style>
 </head>
@@ -236,7 +229,7 @@ body.play-mode #rz2 { display:none; }
 
 <div id="top">
   <div class="logo"><b>★</b> C64 DISK MANAGER <b>★</b></div>
-  <span id="ver">V3.0</span>
+  <span id="ver">V3.6</span>
   <span id="clk"></span>
 </div>
 
@@ -540,7 +533,7 @@ function renderDir(info,name){
   lines.push('<div class="dl"> </div>');
 
   // Hlavička diskety
-  lines.push('<div class="dl"><span class="d-blk">    0 </span><span class="d-id">0 &quot;</span><span class="rv">'+E(dn)+'</span><span class="d-id">&quot; '+E(info.diskId)+'</span></div>');
+  lines.push('<div class="dl"><span class="d-blk">  0 </span><span class="d-id">0 &quot;</span><span class="rv">'+E(info.diskName.padEnd(15,' '))+'</span><span class="d-id"> &quot;'+E(info.diskId)+'</span></div>');
 
   // Soubory
   info.entries.forEach((e,i)=>{
