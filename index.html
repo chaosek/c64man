@@ -236,7 +236,7 @@ body.play-mode #rz2 { display:none; }
 
 <div id="top">
   <div class="logo"><b>★</b> C64 DISK MANAGER <b>★</b></div>
-  <span id="ver">V2.9</span>
+  <span id="ver">V3.0</span>
   <span id="clk"></span>
 </div>
 
@@ -522,6 +522,7 @@ function mountDisk(){
   }
   const name=curDisk.diskName.trim()||'DISK';
   startEmu(gameUrl, 'disk.d64', name, 'D64 MOUNTED', 'D64');
+}
 
 // ══ DIRECTORY RENDERER ══════════════════════════════════════════
 function E(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
