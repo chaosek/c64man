@@ -83,8 +83,8 @@ body { background:var(--bg); display:flex; flex-direction:column; font-family:va
 }
 .rz:hover, .rz.on { background:var(--c64bord); }
 
-/* LEFT PANEL — fixed, no resize */
-#lp { width:200px; min-width:200px; max-width:200px; }
+/* LEFT PANEL — resizable */
+#lp { width:200px; min-width:120px; flex-shrink:0; }
 
 #dz {
   flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
@@ -233,7 +233,7 @@ body.play-mode #rz2 { display:none; }
 
 <div id="top">
   <div class="logo"><b>★</b> C64 DISK MANAGER <b>★</b></div>
-  <span id="ver">V2.3</span>
+  <span id="ver">V2.4</span>
   <span id="clk"></span>
 </div>
 
@@ -266,7 +266,7 @@ body.play-mode #rz2 { display:none; }
     </div>
   </div>
 
-  <div class="rz" id="rz1" style="display:none"></div>
+  <div class="rz" id="rz1"></div>
 
   <!-- MIDDLE: emulator -->
   <div class="panel" id="ep">
@@ -703,6 +703,7 @@ function makeResizer(rzId,el,invert){
     if(!down)return;down=false;rz.classList.remove('on');document.body.style.cssText='';
   });
 }
+makeResizer('rz1',document.getElementById('lp'),false);
 makeResizer('rz2',document.getElementById('dp'),true);
 
 // ══ FOCUS ════════════════════════════════════════════════════════
