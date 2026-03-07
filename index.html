@@ -229,7 +229,7 @@ body.play-mode #rz2 { display:none; }
 
 <div id="top">
   <div class="logo"><b>★</b> C64 DISK MANAGER <b>★</b></div>
-  <span id="ver">V3.9</span>
+  <span id="ver">V4.0</span>
   <span id="clk"></span>
 </div>
 
@@ -455,14 +455,6 @@ function buildSrcdoc(gameUrl,gameName){
     +'</body></html>';
 }
 
-// Převede data na base64 data URI (pro Android)
-function toDataURI(data,mime){
-  const bytes=data instanceof Uint8Array?data:new Uint8Array(data);
-  let bin='';
-  for(let i=0;i<bytes.length;i++)bin+=String.fromCharCode(bytes[i]);
-  return 'data:'+mime+';base64,'+btoa(bin);
-}
-
 function startEmu(gameUrl, gameName, title, sub, info){
   document.getElementById('ep-title').textContent=title;
   document.getElementById('ep-sub').textContent=sub;
@@ -471,14 +463,18 @@ function startEmu(gameUrl, gameName, title, sub, info){
   document.body.classList.add('has-game');
   document.body.classList.add('play-mode');
 
+  // Agresivní cleanup starého iframu
   const old=document.getElementById('emu-frame');
+  old.srcdoc='';
+  old.src='about:blank';
+
   const frame=document.createElement('iframe');
   frame.id='emu-frame';
   frame.style.cssText='position:absolute;inset:0;width:100%!important;height:100%!important;border:none;display:block;';
-  frame.src='about:blank';
-  old.parentNode.replaceChild(frame,old);
-  const srcdoc=buildSrcdoc(gameUrl,gameName);
-  setTimeout(()=>{ frame.removeAttribute('src'); frame.srcdoc=srcdoc; },150);
+  setTimeout(()=>{
+    old.parentNode.replaceChild(frame,old);
+    frame.srcdoc=buildSrcdoc(gameUrl,gameName);
+  },300);
 }
 
 function launchEmulator(entry){
@@ -488,34 +484,20 @@ function launchEmulator(entry){
   const prg=readFileData(entry);
   if(!prg||!prg.length){setS('EMPTY FILE');return;}
 
-  const mobile=/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+  const blob=new Blob([prg],{type:'application/octet-stream'});
+  emuBlobUrl=URL.createObjectURL(blob);
   const gameName=(entry.fnVice||entry.filename).trim()+'.prg';
-  let gameUrl;
-  if(mobile){
-    gameUrl=toDataURI(prg,'application/octet-stream');
-  } else {
-    const blob=new Blob([prg],{type:'application/octet-stream'});
-    emuBlobUrl=URL.createObjectURL(blob);
-    gameUrl=emuBlobUrl;
-  }
-  startEmu(gameUrl, gameName, entry.filename, entry.type+' · '+entry.blocks+' BLK', 'PRG·'+entry.blocks+'BLK');
+  startEmu(emuBlobUrl, gameName, entry.filename, entry.type+' · '+entry.blocks+' BLK', 'PRG·'+entry.blocks+'BLK');
 }
 
 function mountDisk(){
   if(!curDisk){setS('NO DISK LOADED');return;}
   if(emuBlobUrl){URL.revokeObjectURL(emuBlobUrl);emuBlobUrl=null;}
 
-  const mobile=/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
-  let gameUrl;
-  if(mobile){
-    gameUrl=toDataURI(curDisk.data,'application/octet-stream');
-  } else {
-    const blob=new Blob([curDisk.data],{type:'application/octet-stream'});
-    emuBlobUrl=URL.createObjectURL(blob);
-    gameUrl=emuBlobUrl;
-  }
+  const blob=new Blob([curDisk.data],{type:'application/octet-stream'});
+  emuBlobUrl=URL.createObjectURL(blob);
   const name=curDisk.diskName.trim()||'DISK';
-  startEmu(gameUrl, 'disk.d64', name, 'D64 MOUNTED', 'D64');
+  startEmu(emuBlobUrl, 'disk.d64', name, 'D64 MOUNTED', 'D64');
 }
 
 // ══ DIRECTORY RENDERER ══════════════════════════════════════════
