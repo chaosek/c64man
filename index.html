@@ -128,9 +128,8 @@ body { background:var(--bg); display:flex; flex-direction:column; font-family:va
 .nn.d64 { color:var(--c64cyan); }
 .nsz { font-size:10px; color:var(--c64bord); flex-shrink:0; margin-left:4px; }
 
-/* MIDDLE PANEL - emulator — skrytý dokud se nespustí hra */
-#ep { flex:1 1 0; min-width:0; display:none; }
-body.has-game #ep { display:flex; }
+/* MIDDLE PANEL - emulator — vždy zabírá místo */
+#ep { flex:1 1 0; min-width:0; display:flex; }
 
 #prev-body { flex:1; overflow:hidden; position:relative; z-index:2; }
 #emu-placeholder {
@@ -212,11 +211,9 @@ body.play-mode #rz2 { display:none; }
 @media (max-width:900px) {
   .rz { display:none !important; }
   #lp { width:160px !important; min-width:160px !important; max-width:160px !important; flex-shrink:0 !important; flex-grow:0 !important; }
-  /* browse: dp zabere vše vedle lp */
-  #dp { flex:1 1 0 !important; }
-  /* hra běží: dp zmizí, ep zabere vše */
-  body.play-mode #dp { display:none !important; }
-  body.has-game #ep { flex:1 1 0 !important; }
+  #ep { flex:1 1 0 !important; }
+  #dp { flex:1 1 0 !important; width:auto !important; transition:none; }
+  body.play-mode #dp { flex:0 0 0 !important; overflow:hidden; }
   #top { height:22px; }
   #bot { height:18px; }
   .logo { font-size:9px; }
@@ -236,7 +233,7 @@ body.play-mode #rz2 { display:none; }
 
 <div id="top">
   <div class="logo"><b>★</b> C64 DISK MANAGER <b>★</b></div>
-  <span id="ver">V2.0</span>
+  <span id="ver">V2.3</span>
   <span id="clk"></span>
 </div>
 
