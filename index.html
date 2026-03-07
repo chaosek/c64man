@@ -177,6 +177,7 @@ body.play-mode #rz2 { display:none; }
 .t-cbm  { color:var(--c64mag); }
 .t-nc   { color:var(--c64red); }
 .t-lk   { color:var(--c64yel); }
+.t-yel  { color:var(--c64yel); }
 .d-free { color:var(--c64white); }
 .cur { display:inline-block; width:10px; height:17px; background:var(--c64txt); vertical-align:text-bottom; animation:blink 1s step-end infinite; }
 @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
@@ -188,6 +189,8 @@ body.play-mode #rz2 { display:none; }
 }
 .bk { background:var(--c64inv); color:var(--c64invfg); font-size:9px; font-weight:700; padding:0 4px; margin-right:2px; letter-spacing:1px; }
 .bl { font-size:9px; color:var(--c64txt); letter-spacing:1px; text-transform:uppercase; }
+.bot-btn { height:16px; padding:0 8px; background:var(--c64bg); border:1px solid var(--c64bord); color:var(--c64cyan); font-family:var(--font); font-size:9px; font-weight:700; letter-spacing:1px; text-transform:uppercase; cursor:pointer; }
+.bot-btn:hover { background:var(--c64inv); color:var(--c64invfg); }
 .bsp { flex:1; }
 #st { font-size:9px; color:var(--c64txt); letter-spacing:1px; text-transform:uppercase; }
 
@@ -233,7 +236,7 @@ body.play-mode #rz2 { display:none; }
 
 <div id="top">
   <div class="logo"><b>★</b> C64 DISK MANAGER <b>★</b></div>
-  <span id="ver">V2.4</span>
+  <span id="ver">V2.9</span>
   <span id="clk"></span>
 </div>
 
@@ -311,7 +314,6 @@ body.play-mode #rz2 { display:none; }
 </div>
 
 <div id="bot">
-  <span><span class="bk">RET</span><span class="bl">RUN</span></span>
   <span><span class="bk">F5</span><span class="bl">LOAD FOLDER</span></span>
   <span class="bsp"></span>
   <span id="st">READY.</span>
@@ -459,7 +461,7 @@ function buildSrcdoc(gameUrl,gameName){
     +'</body></html>';
 }
 
-// Převede ArrayBuffer/Uint8Array na base64 data URI
+// Převede data na base64 data URI (pro Android)
 function toDataURI(data,mime){
   const bytes=data instanceof Uint8Array?data:new Uint8Array(data);
   let bin='';
@@ -467,47 +469,14 @@ function toDataURI(data,mime){
   return 'data:'+mime+';base64,'+btoa(bin);
 }
 
-function launchEmulator(entry){
-  if(!curDisk){setS('NO DISK');return;}
-  if(emuBlobUrl){URL.revokeObjectURL(emuBlobUrl);emuBlobUrl=null;}
-
-  const isFirst=entries_ref.length>0&&entries_ref[0]===entry;
-  let gameUrl,gameName;
-
-  const mobile=/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
-
-  if(isFirst){
-    gameName='disk.d64';
-    if(mobile){
-      gameUrl=toDataURI(curDisk.data,'application/octet-stream');
-    } else {
-      const blob=new Blob([curDisk.data],{type:'application/octet-stream'});
-      emuBlobUrl=URL.createObjectURL(blob);
-      gameUrl=emuBlobUrl;
-    }
-  } else {
-    const prg=readFileData(entry);
-    if(!prg||!prg.length){setS('EMPTY FILE');return;}
-    gameName=(entry.fnVice||entry.filename).trim()+'.prg';
-    if(mobile){
-      gameUrl=toDataURI(prg,'application/octet-stream');
-    } else {
-      const blob=new Blob([prg],{type:'application/octet-stream'});
-      emuBlobUrl=URL.createObjectURL(blob);
-      gameUrl=emuBlobUrl;
-    }
-  }
-
-  document.getElementById('ep-title').textContent=entry.filename;
-  document.getElementById('ep-sub').textContent=entry.type+' · '+entry.blocks+' BLK';
-  document.getElementById('prev-info').textContent=isFirst?'D64':'PRG·'+entry.blocks+'BLK';
+function startEmu(gameUrl, gameName, title, sub, info){
+  document.getElementById('ep-title').textContent=title;
+  document.getElementById('ep-sub').textContent=sub;
+  document.getElementById('prev-info').textContent=info;
   document.getElementById('emu-placeholder').style.display='none';
-
-  // has-game = emulator panel existuje, play-mode = dp skrytý
   document.body.classList.add('has-game');
   document.body.classList.add('play-mode');
 
-  // vždy čistý iframe — nejdřív about:blank, pak srcdoc
   const old=document.getElementById('emu-frame');
   const frame=document.createElement('iframe');
   frame.id='emu-frame';
@@ -515,11 +484,44 @@ function launchEmulator(entry){
   frame.src='about:blank';
   old.parentNode.replaceChild(frame,old);
   const srcdoc=buildSrcdoc(gameUrl,gameName);
-  setTimeout(()=>{
-    frame.removeAttribute('src');
-    frame.srcdoc=srcdoc;
-  },150);
+  setTimeout(()=>{ frame.removeAttribute('src'); frame.srcdoc=srcdoc; },150);
 }
+
+function launchEmulator(entry){
+  if(!curDisk){setS('NO DISK');return;}
+  if(emuBlobUrl){URL.revokeObjectURL(emuBlobUrl);emuBlobUrl=null;}
+
+  const prg=readFileData(entry);
+  if(!prg||!prg.length){setS('EMPTY FILE');return;}
+
+  const mobile=/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+  const gameName=(entry.fnVice||entry.filename).trim()+'.prg';
+  let gameUrl;
+  if(mobile){
+    gameUrl=toDataURI(prg,'application/octet-stream');
+  } else {
+    const blob=new Blob([prg],{type:'application/octet-stream'});
+    emuBlobUrl=URL.createObjectURL(blob);
+    gameUrl=emuBlobUrl;
+  }
+  startEmu(gameUrl, gameName, entry.filename, entry.type+' · '+entry.blocks+' BLK', 'PRG·'+entry.blocks+'BLK');
+}
+
+function mountDisk(){
+  if(!curDisk){setS('NO DISK LOADED');return;}
+  if(emuBlobUrl){URL.revokeObjectURL(emuBlobUrl);emuBlobUrl=null;}
+
+  const mobile=/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+  let gameUrl;
+  if(mobile){
+    gameUrl=toDataURI(curDisk.data,'application/octet-stream');
+  } else {
+    const blob=new Blob([curDisk.data],{type:'application/octet-stream'});
+    emuBlobUrl=URL.createObjectURL(blob);
+    gameUrl=emuBlobUrl;
+  }
+  const name=curDisk.diskName.trim()||'DISK';
+  startEmu(gameUrl, 'disk.d64', name, 'D64 MOUNTED', 'D64');
 
 // ══ DIRECTORY RENDERER ══════════════════════════════════════════
 function E(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
@@ -529,7 +531,17 @@ function renderDir(info,name){
   entries_ref=info.entries;
   const lines=[];
   const dn=info.diskName.padEnd(16,' ');
+
+  // MOUNT řádek — úplně první
+  lines.push('<div class="dl entry mount-entry"><span class="d-blk">    ▶ </span><span class="d-fn">&quot;MOUNT DISK IMAGE&quot; </span><span class="t-prg">D64</span></div>');
+
+  // Prázdný řádek
+  lines.push('<div class="dl"> </div>');
+
+  // Hlavička diskety
   lines.push('<div class="dl"><span class="d-blk">    0 </span><span class="d-id">0 &quot;</span><span class="rv">'+E(dn)+'</span><span class="d-id">&quot; '+E(info.diskId)+'</span></div>');
+
+  // Soubory
   info.entries.forEach((e,i)=>{
     const blk=String(e.blocks).padStart(5,' ');
     const fn=e.filename.padEnd(16,' ');
@@ -537,12 +549,15 @@ function renderDir(info,name){
     const lock=e.locked?'<span class="t-lk">&lt;</span>':'';
     lines.push('<div class="dl entry" data-i="'+i+'"><span class="d-blk">'+blk+' </span><span class="d-fn">&quot;'+E(fn)+'&quot; </span>'+splat+'<span class="'+tc(e.type)+'">'+E(e.type)+'</span>'+lock+'</div>');
   });
+
   lines.push('<div class="dl"><span class="d-blk">'+String(info.free).padStart(5,' ')+' </span><span class="d-free">BLOCKS FREE.</span><span class="cur"></span></div>');
 
   const scr=document.getElementById('c64s');
   scr.innerHTML=lines.join('');
   scr.scrollTop=0;
-  scr.querySelectorAll('.dl.entry').forEach(el=>{
+
+  scr.querySelector('.mount-entry').addEventListener('click',mountDisk);
+  scr.querySelectorAll('.dl.entry:not(.mount-entry)').forEach(el=>{
     el.addEventListener('click',()=>launchEmulator(info.entries[+el.dataset.i]));
   });
 
