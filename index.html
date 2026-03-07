@@ -229,7 +229,7 @@ body.play-mode #rz2 { display:none; }
 
 <div id="top">
   <div class="logo"><b>★</b> C64 DISK MANAGER <b>★</b></div>
-  <span id="ver">V3.6</span>
+  <span id="ver">V3.7</span>
   <span id="clk"></span>
 </div>
 
@@ -442,7 +442,9 @@ function buildSrcdoc(gameUrl,gameName){
     '    clearInterval(iv);',
     '    try{e.changeSettingOption("vice_physical_keyboard_pass_through","enabled");',
     '    e.changeSettingOption("keyboardInput","enabled");',
-    '    e.changeSettingOption("vice_joyport","2");}catch(ex){}',
+    '    e.changeSettingOption("vice_joyport","2");',
+    '    e.changeSettingOption("vice_drive_true_emulation","disabled");',
+    '    }catch(ex){}',
     '  },250);',
     '};',
   ].join('\n');
