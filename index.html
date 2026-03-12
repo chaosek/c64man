@@ -234,7 +234,7 @@ body.play-mode #rz2 { display:none; }
 
 <div id="top">
   <div class="logo"><b>★</b> C64 DISK MANAGER <b>★</b></div>
-  <span id="ver">V5.5</span>
+  <span id="ver">V5.6</span>
   <span id="clk"></span>
 </div>
 
@@ -428,7 +428,7 @@ let curDisk=null,curDiskPath='',entries_ref=[],emuBlobUrl=null,curM3uDisks=null,
 let roots=[],expanded=new Set(),selNode=null,flatNodes=[];
 
 // ══ EMULATOR ════════════════════════════════════════════════════
-function buildSrcdoc(gameUrl,gameName,paths){
+function buildSrcdoc(gameUrl,gameName){
   const js=[
     'window.EJS_player='+JSON.stringify('#game')+';',
     'window.EJS_core='+JSON.stringify('vice_x64sc')+';',
@@ -441,7 +441,6 @@ function buildSrcdoc(gameUrl,gameName,paths){
     'window.EJS_backgroundColor="#000000";',
     'window.EJS_color="#3535c0";',
     'window.EJS_AdUrl="";',
-    paths?'window.EJS_paths='+JSON.stringify(paths)+';':'',
     'window.EJS_Buttons={playPause:false,restart:true,mute:true,settings:true,fullscreen:true,saveState:true,loadState:true,screenRecord:false,gamepad:true,cheat:false,volume:true};',
   ].join('\n');
   const onStart=[
@@ -467,7 +466,7 @@ function buildSrcdoc(gameUrl,gameName,paths){
     +'</body></html>';
 }
 
-function startEmu(gameUrl, gameName, title, sub, info, paths){
+function startEmu(gameUrl, gameName, title, sub, info){
   document.getElementById('ep-title').textContent=title;
   document.getElementById('ep-sub').textContent=sub;
   document.getElementById('prev-info').textContent=info;
@@ -477,7 +476,7 @@ function startEmu(gameUrl, gameName, title, sub, info, paths){
 
   const frame=document.getElementById('emu-frame');
   frame.srcdoc='';
-  setTimeout(()=>{ frame.srcdoc=buildSrcdoc(gameUrl,gameName,paths); },150);
+  setTimeout(()=>{ frame.srcdoc=buildSrcdoc(gameUrl,gameName); },150);
 }
 
 function launchEmulator(entry){
@@ -490,7 +489,7 @@ function launchEmulator(entry){
   const blob=new Blob([prg],{type:'application/octet-stream'});
   emuBlobUrl=URL.createObjectURL(blob);
   const gameName=(entry.fnVice||entry.filename).trim()+'.prg';
-  startEmu(emuBlobUrl, gameName, entry.filename, entry.type+' · '+entry.blocks+' BLK', 'PRG·'+entry.blocks+'BLK', null);
+  startEmu(emuBlobUrl, gameName, entry.filename, entry.type+' · '+entry.blocks+' BLK', 'PRG·'+entry.blocks+'BLK');
 }
 
 function updateDiskNav(){
@@ -503,96 +502,28 @@ function updateDiskNav(){
 
 function swapToDisk(idx){
   if(!curM3uDisks||idx<0||idx>=curM3uDisks.length)return;
-  const frame=document.getElementById('emu-frame');
-  const cw=frame&&frame.contentWindow;
-
-  // Ulož state pokud emulator běží
-  const saveAndSwap=()=>{
-    const emu=cw&&cw.EJS_emulator;
-    if(emu&&emu.gameManager){
-      try{
-        const state=emu.gameManager.saveState();
-        doSwap(state);
-        return;
-      }catch(e){}
-    }
-    doSwap(null);
+  curDiskIndex=idx;
+  const f=curM3uDisks[idx];
+  loadD64(f,f.name);
+  if(emuBlobUrl){URL.revokeObjectURL(emuBlobUrl);emuBlobUrl=null;}
+  const r=new FileReader();
+  r.onload=ev=>{
+    const blob=new Blob([ev.target.result],{type:'application/octet-stream'});
+    emuBlobUrl=URL.createObjectURL(blob);
+    startEmu(emuBlobUrl,'disk.d64',f.name,'DISK '+(idx+1)+'/'+curM3uDisks.length,'D64');
+    updateDiskNav();
   };
-
-  const doSwap=(savedState)=>{
-    curDiskIndex=idx;
-    const f=curM3uDisks[idx];
-    const r=new FileReader();
-    r.onload=ev=>{
-      const data=new Uint8Array(ev.target.result);
-      // Načti D64 adresář
-      try{const info=parseD64(ev.target.result);curDisk=info;renderDir(info,f.name);}catch(e){}
-      // Vyměn disk v běžícím emulátoru přes FS
-      const emu=cw&&cw.EJS_emulator;
-      if(emu&&emu.gameManager&&emu.gameManager.FS){
-        try{
-          const FS=emu.gameManager.FS;
-          try{FS.unlink('/disk.d64');}catch(e){}
-          FS.writeFile('/disk.d64',data);
-          setS('DISK '+(idx+1)+': '+f.name);
-          updateDiskNav();
-          // Načti state zpět pokud byl uložen
-          if(savedState){
-            setTimeout(()=>{try{emu.gameManager.loadState(savedState);}catch(e){}},200);
-          }
-        }catch(e){setS('SWAP ERROR: '+e.message);}
-      } else {
-        // Emulator neběží — spusť nový
-        if(emuBlobUrl){URL.revokeObjectURL(emuBlobUrl);emuBlobUrl=null;}
-        const blob=new Blob([data],{type:'application/octet-stream'});
-        emuBlobUrl=URL.createObjectURL(blob);
-        startEmu(emuBlobUrl,'disk.d64',f.name,'DISK '+(idx+1)+'/'+curM3uDisks.length,'D64',null);
-        updateDiskNav();
-      }
-    };
-    r.readAsArrayBuffer(f);
-  };
-
-  saveAndSwap();
+  r.readAsArrayBuffer(f);
 }
 
 function mountDisk(){
   if(!curDisk){setS('NO DISK LOADED');return;}
   if(emuBlobUrl){URL.revokeObjectURL(emuBlobUrl);emuBlobUrl=null;}
-
-  if(curM3uDisks&&curM3uDisks.length>1){
-    const reads=curM3uDisks.map(f=>new Promise((res,rej)=>{
-      const r=new FileReader();
-      r.onload=e=>res({name:f.name,data:new Uint8Array(e.target.result),file:f});
-      r.onerror=rej;
-      r.readAsArrayBuffer(f);
-    }));
-    Promise.all(reads).then(disks=>{
-      // Vytvoř blob URL pro každý disk
-      const diskUrls=disks.map(d=>{
-        const b=new Blob([d.data],{type:'application/octet-stream'});
-        return{name:d.name,url:URL.createObjectURL(b)};
-      });
-      // M3U obsah — seznam názvů disků
-      const m3uText=diskUrls.map(d=>d.name).join('\n');
-      const m3uBlob=new Blob([m3uText],{type:'text/plain'});
-      const m3uUrl=URL.createObjectURL(m3uBlob);
-      // EJS_paths — vloží všechny soubory do VFS
-      const paths={};
-      diskUrls.forEach(d=>paths[d.name]=d.url);
-      paths['playlist.m3u']=m3uUrl;
-      emuBlobUrl=m3uUrl;
-      const name=curDisk.diskName.trim()||'DISK';
-      startEmu(m3uUrl,'playlist.m3u',name,'M3U ('+disks.length+' DISKS)','M3U',paths);
-      curDiskIndex=0;
-      setTimeout(updateDiskNav,200);
-    });
-  } else {
-    const blob=new Blob([curDisk.data],{type:'application/octet-stream'});
-    emuBlobUrl=URL.createObjectURL(blob);
-    const name=curDisk.diskName.trim()||'DISK';
-    startEmu(emuBlobUrl,'disk.d64',name,'D64 MOUNTED','D64',null);
-  }
+  const blob=new Blob([curDisk.data],{type:'application/octet-stream'});
+  emuBlobUrl=URL.createObjectURL(blob);
+  const name=curDisk.diskName.trim()||'DISK';
+  startEmu(emuBlobUrl,'disk.d64',name,'D64 MOUNTED','D64');
+  updateDiskNav();
 }
 
 // ══ DIRECTORY RENDERER ══════════════════════════════════════════
