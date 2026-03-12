@@ -229,7 +229,7 @@ body.play-mode #rz2 { display:none; }
 
 <div id="top">
   <div class="logo"><b>★</b> C64 DISK MANAGER <b>★</b></div>
-  <span id="ver">V4.3</span>
+  <span id="ver">V4.4</span>
   <span id="clk"></span>
 </div>
 
@@ -475,14 +475,11 @@ function startEmu(gameUrl, gameName, title, sub, info){
   document.body.classList.add('has-game');
   document.body.classList.add('play-mode');
 
-  // Agresivní cleanup starého iframu
   const old=document.getElementById('emu-frame');
-  old.srcdoc='';
-  old.src='about:blank';
-
   const frame=document.createElement('iframe');
   frame.id='emu-frame';
-  frame.style.cssText='position:absolute;inset:0;width:100%!important;height:100%!important;border:none;display:block;';
+  frame.style.cssText='position:absolute;inset:0;width:100%!important;height:100%!important;border:none;';
+  old.src='about:blank';
   setTimeout(()=>{
     old.parentNode.replaceChild(frame,old);
     frame.srcdoc=buildSrcdoc(gameUrl,gameName);
