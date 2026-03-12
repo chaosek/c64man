@@ -229,7 +229,7 @@ body.play-mode #rz2 { display:none; }
 
 <div id="top">
   <div class="logo"><b>★</b> C64 DISK MANAGER <b>★</b></div>
-  <span id="ver">V4.5</span>
+  <span id="ver">V4.6</span>
   <span id="clk"></span>
 </div>
 
@@ -447,6 +447,7 @@ function buildSrcdoc(gameUrl,gameName){
     '});',
   ].join('\n');
   const onStart=[
+    'window.EJS_onGameStart=function(){',
     '  var tries=0,iv=setInterval(function(){',
     '    if(++tries>60){clearInterval(iv);return;}',
     '    var e=window.EJS_emulator;',
