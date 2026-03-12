@@ -229,7 +229,7 @@ body.play-mode #rz2 { display:none; }
 
 <div id="top">
   <div class="logo"><b>★</b> C64 DISK MANAGER <b>★</b></div>
-  <span id="ver">V6.1</span>
+  <span id="ver">V6.2</span>
   <span id="clk"></span>
 </div>
 
@@ -417,13 +417,12 @@ function makeEmptyD64(){
   return d;
 }
 
-function buildSrcdoc(gameUrl){
-  const hasGame=!!(gameUrl);
+function buildSrcdoc(gameUrl, gameName){
   const js=[
     'window.EJS_player='+JSON.stringify('#game')+';',
     'window.EJS_core='+JSON.stringify('vice_x64sc')+';',
-    hasGame?('window.EJS_gameUrl='+JSON.stringify(gameUrl)+';'):'',
-    hasGame?('window.EJS_gameName='+JSON.stringify('disk.d64')+';'):'',
+    'window.EJS_gameUrl='+JSON.stringify(gameUrl)+';',
+    'window.EJS_gameName='+JSON.stringify(gameName)+';',
     'window.EJS_pathtodata='+JSON.stringify('https://cdn.emulatorjs.org/stable/data/')+';',
     'window.EJS_startOnLoaded=true;',
     'window.EJS_coreSettings={"vice_keyboard_passthrough":"enabled","vice_drive_true_emulation":"enabled"};',
@@ -432,7 +431,7 @@ function buildSrcdoc(gameUrl){
     'window.EJS_color="#3535c0";',
     'window.EJS_AdUrl="";',
     'window.EJS_Buttons={playPause:false,restart:true,mute:true,settings:true,fullscreen:true,saveState:true,loadState:true,screenRecord:false,gamepad:true,cheat:false,volume:true};',
-  ].filter(Boolean).join('\n');
+  ].join('\n');
   const onStart=[
     'window.EJS_onGameStart=function(){',
     '  var tries=0,iv=setInterval(function(){',
@@ -492,20 +491,25 @@ function mountOnly(){
   document.body.classList.add('has-game');
   document.body.classList.add('play-mode');
 
+  // Minimální PRG: load address $0801, pak END — VICE načte, nezačne autostart disku
+  const emptyPrg=new Uint8Array([0x01,0x08]); // jen load address, prázdný program
+  if(emuBlobUrl){URL.revokeObjectURL(emuBlobUrl);emuBlobUrl=null;}
+  const prgBlob=new Blob([emptyPrg],{type:'application/octet-stream'});
+  emuBlobUrl=URL.createObjectURL(prgBlob);
+
   const frame=document.getElementById('emu-frame');
   frame.srcdoc='';
 
-  // Uložíme referenci na data pro swap po startu
   const diskData=curDisk.data;
   const diskName=name;
 
   setTimeout(()=>{
-    frame.srcdoc=buildSrcdoc(null); // bez gameUrl → VICE startuje bez disku
+    frame.srcdoc=buildSrcdoc(emuBlobUrl,'empty.prg');
     emuRunning=true;
-    // Po načtení emulátoru mountneme reálnou disketu
+    // Po načtení mountneme reálnou disketu do FS
     let tries=0;
     const iv=setInterval(()=>{
-      if(++tries>120){clearInterval(iv);setS('TIMEOUT: manual swap needed');return;}
+      if(++tries>120){clearInterval(iv);setS('TIMEOUT');return;}
       if(swapDiskInFS(diskData,diskName)){clearInterval(iv);}
     },500);
   },150);
