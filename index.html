@@ -463,10 +463,17 @@ function swapDiskInFS(data, diskName){
   try{
     // Debug: vypíš co je v kořeni FS
     try{
-      const root=FS.readdir('/');
-      console.log('FS root:',root);
-      setS('FS ROOT: '+root.join(' '));
-    }catch(e){console.log('FS readdir err',e);}
+      function lsR(path){
+        try{
+          const items=FS.readdir(path).filter(x=>x!='.'&&x!='..');
+          items.forEach(x=>{
+            const full=path+'/'+x;
+            try{lsR(full);}catch(e){console.log('FILE:',full);}
+          });
+        }catch(e){console.log('FILE:',path);}
+      }
+      lsR('/vice');
+    }catch(e){console.log('vice err',e);}
     try{FS.unlink('/disk.d64');}catch(e){}
     FS.writeFile('/disk.d64',new Uint8Array(data));
     setS('DISK MOUNTED: '+(diskName||''));
