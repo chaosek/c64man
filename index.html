@@ -229,7 +229,7 @@ body.play-mode #rz2 { display:none; }
 
 <div id="top">
   <div class="logo"><b>★</b> C64 DISK MANAGER <b>★</b></div>
-  <span id="ver">V6.4d</span>
+  <span id="ver">V6.5</span>
   <span id="clk"></span>
 </div>
 
@@ -390,34 +390,8 @@ let curDisk=null,curDiskPath='',entries_ref=[],emuBlobUrl=null;
 let roots=[],expanded=new Set(),selNode=null,flatNodes=[];
 
 // ══ EMULATOR ════════════════════════════════════════════════════
-let emuRunning=false;
 
-// Prázdná D64 — validní struktura, žádné soubory → VICE nenajde co spustit → BASIC prompt
-function makeEmptyD64(){
-  const d=new Uint8Array(174848);
-  // BAM sektor 18/0
-  const bamOff=(17*21)*256; // track 18 = 17 tracks před ním, každý 21 sektorů
-  // jednodušší: použijeme přesný offset
-  // Track 1-17: 21 sektorů, Track 18-24: 19, atd. — ale stačí prázdný s validním BAM
-  // Offset track 18, sector 0 = 0x16500
-  const bam=0x16500;
-  d[bam+0]=18; // next track (adresář)
-  d[bam+1]=1;  // next sector
-  d[bam+2]=0x41; // DOS version 'A'
-  d[bam+3]=0;
-  // Disk name: "EMPTY           " + ID "2A"
-  const dname="EMPTY DISK      ";
-  for(let i=0;i<16;i++)d[bam+144+i]=dname.charCodeAt(i)&0x7f;
-  d[bam+160]=0xa0;d[bam+161]=0xa0;
-  d[bam+162]=0x32;d[bam+163]=0x41; // "2A"
-  d[bam+164]=0xa0;d[bam+165]=0x32;d[bam+166]=0x41;
-  // Adresář track 18, sector 1 — prázdný (všechny sloty 0)
-  const dir=0x16600; // track 18 sector 1
-  d[dir+0]=0; d[dir+1]=0xff; // konec řetězu
-  return d;
-}
-
-function buildSrcdoc(gameUrl, gameName){
+function buildSrcdoc(gameUrl,gameName){
   const js=[
     'window.EJS_player='+JSON.stringify('#game')+';',
     'window.EJS_core='+JSON.stringify('vice_x64sc')+';',
@@ -455,65 +429,11 @@ function buildSrcdoc(gameUrl, gameName){
     +'</body></html>';
 }
 
-function swapDiskInFS(data, diskName){
-  const frame=document.getElementById('emu-frame');
-  const cw=frame&&frame.contentWindow;
-  const FS=cw&&cw.EJS_emulator&&cw.EJS_emulator.gameManager&&cw.EJS_emulator.gameManager.FS;
-  if(!FS)return false;
-  try{
-    // Zapiš D64 na novou cestu
-    try{FS.unlink('//disk.d64');}catch(e){}
-    FS.writeFile('//disk.d64', new Uint8Array(data));
-
-    // Zkus VICE monitor příkaz přes retro_cheat nebo jiný kanál
-    const gm=cw.EJS_emulator&&cw.EJS_emulator.gameManager;
-    if(gm&&gm.Module){
-      const M=gm.Module;
-      // Zkus retro_load_game s novou cestou
-      try{
-        if(M.retro_load_game){
-          M.retro_load_game({path:'//disk.d64',data:0,size:0,meta:''});
-          console.log('retro_load_game called');
-        }
-      }catch(e){console.log('retro_load_game err:',e);}
-
-      // Zkus ccw (VICE command) pokud existuje
-      try{
-        if(M.ccw){M.ccw('attach8 //disk.d64');console.log('ccw called');}
-      }catch(e){}
-
-      // Zkus retro_set_eject + retro_get_image_path
-      try{
-        if(M.retro_disk_control_set_eject_state){
-          M.retro_disk_control_set_eject_state(1);
-          if(M.retro_disk_control_replace_image_index)
-            M.retro_disk_control_replace_image_index(0,{path:'//disk.d64',meta:''});
-          M.retro_disk_control_set_eject_state(0);
-          console.log('disk control called');
-        }
-      }catch(e){console.log('disk control err:',e);}
-    }
-
-    setS('DISK MOUNTED: '+(diskName||''));
-    document.getElementById('ep-title').textContent=diskName||'DISK';
-    return true;
-  }catch(e){setS('SWAP ERROR: '+e.message);return false;}
-}
-
 function mountOnly(){
   if(!curDisk){setS('NO DISK LOADED');return;}
-
-  // Emulator již běží → jen swap
-  if(emuRunning){
-    swapDiskInFS(curDisk.data, curDisk.diskName.trim());
-    return;
-  }
-
-  // Emulator neběží → spustíme s PRÁZDNOU D64, pak swapneme reálnou
   if(emuBlobUrl){URL.revokeObjectURL(emuBlobUrl);emuBlobUrl=null;}
-  const emptyBlob=new Blob([makeEmptyD64()],{type:'application/octet-stream'});
-  emuBlobUrl=URL.createObjectURL(emptyBlob);
-
+  const blob=new Blob([curDisk.data],{type:'application/octet-stream'});
+  emuBlobUrl=URL.createObjectURL(blob);
   const name=curDisk.diskName.trim()||'DISK';
   document.getElementById('ep-title').textContent=name;
   document.getElementById('ep-sub').textContent='D64 MOUNTED';
@@ -521,29 +441,9 @@ function mountOnly(){
   document.getElementById('emu-placeholder').style.display='none';
   document.body.classList.add('has-game');
   document.body.classList.add('play-mode');
-
-  // Minimální PRG: load address $0801, pak END — VICE načte, nezačne autostart disku
-  const emptyPrg=new Uint8Array([0x01,0x08]); // jen load address, prázdný program
-  if(emuBlobUrl){URL.revokeObjectURL(emuBlobUrl);emuBlobUrl=null;}
-  const prgBlob=new Blob([emptyPrg],{type:'application/octet-stream'});
-  emuBlobUrl=URL.createObjectURL(prgBlob);
-
   const frame=document.getElementById('emu-frame');
   frame.srcdoc='';
-
-  const diskData=curDisk.data;
-  const diskName=name;
-
-  setTimeout(()=>{
-    frame.srcdoc=buildSrcdoc(emuBlobUrl,'empty.prg');
-    emuRunning=true;
-    // Po načtení mountneme reálnou disketu do FS
-    let tries=0;
-    const iv=setInterval(()=>{
-      if(++tries>120){clearInterval(iv);setS('TIMEOUT');return;}
-      if(swapDiskInFS(diskData,diskName)){clearInterval(iv);}
-    },500);
-  },150);
+  setTimeout(()=>{ frame.srcdoc=buildSrcdoc(emuBlobUrl,'disk.d64'); },150);
 }
 
 // ══ DIRECTORY RENDERER ══════════════════════════════════════════
