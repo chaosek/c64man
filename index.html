@@ -461,21 +461,23 @@ function swapDiskInFS(data, diskName){
   const FS=cw&&cw.EJS_emulator&&cw.EJS_emulator.gameManager&&cw.EJS_emulator.gameManager.FS;
   if(!FS)return false;
   try{
-    // Debug: vypíš co je v kořeni FS
+    try{FS.unlink('/disk.d64');}catch(e){}
+    FS.writeFile('/disk.d64',new Uint8Array(data));
+
+    // Debug po zápisu
     try{
+      console.log('FS root after write:',FS.readdir('/'));
       function lsR(path){
         try{
-          const items=FS.readdir(path).filter(x=>x!='.'&&x!='..');
-          items.forEach(x=>{
+          FS.readdir(path).filter(x=>x!='.'&&x!='..').forEach(x=>{
             const full=path+'/'+x;
             try{lsR(full);}catch(e){console.log('FILE:',full);}
           });
         }catch(e){console.log('FILE:',path);}
       }
       lsR('/vice');
-    }catch(e){console.log('vice err',e);}
-    try{FS.unlink('/disk.d64');}catch(e){}
-    FS.writeFile('/disk.d64',new Uint8Array(data));
+    }catch(e){console.log('debug err',e);}
+
     setS('DISK MOUNTED: '+(diskName||''));
     document.getElementById('ep-title').textContent=diskName||'DISK';
     return true;
