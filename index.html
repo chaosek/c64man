@@ -132,7 +132,7 @@ body { background:var(--bg); display:flex; flex-direction:column; font-family:va
 /* MIDDLE PANEL - emulator — vždy zabírá místo */
 #ep { flex:1 1 0; min-width:0; display:flex; }
 
-#prev-body { flex:1; overflow:hidden; position:relative; z-index:2; }
+#prev-body { flex:1; overflow:visible; position:relative; z-index:2; }
 #emu-placeholder {
   position:absolute; inset:0; display:flex; flex-direction:column;
   align-items:center; justify-content:center; gap:14px;
@@ -234,7 +234,7 @@ body.play-mode #rz2 { display:none; }
 
 <div id="top">
   <div class="logo"><b>★</b> C64 DISK MANAGER <b>★</b></div>
-  <span id="ver">V5.4</span>
+  <span id="ver">V5.5</span>
   <span id="clk"></span>
 </div>
 
@@ -680,10 +680,12 @@ function loadM3U(file, name){
     if(!diskFiles.length){setS('NO D64 FILES FOUND FOR M3U');return;}
 
     curM3uDisks=diskFiles;
+    curDiskIndex=0;
 
     // Načti první D64 pro zobrazení adresáře
     loadD64(diskFiles[0], lines[0].split('/').pop().split('\\').pop());
     setS('M3U: '+diskFiles.length+' DISKS — '+name);
+    updateDiskNav();
   };
   r.readAsText(file);
 }
