@@ -229,7 +229,7 @@ body.play-mode #rz2 { display:none; }
 
 <div id="top">
   <div class="logo"><b>★</b> C64 DISK MANAGER <b>★</b></div>
-  <span id="ver">V6.2</span>
+  <span id="ver">V6.2d</span>
   <span id="clk"></span>
 </div>
 
@@ -461,6 +461,12 @@ function swapDiskInFS(data, diskName){
   const FS=cw&&cw.EJS_emulator&&cw.EJS_emulator.gameManager&&cw.EJS_emulator.gameManager.FS;
   if(!FS)return false;
   try{
+    // Debug: vypíš co je v kořeni FS
+    try{
+      const root=FS.readdir('/');
+      console.log('FS root:',root);
+      setS('FS ROOT: '+root.join(' '));
+    }catch(e){console.log('FS readdir err',e);}
     try{FS.unlink('/disk.d64');}catch(e){}
     FS.writeFile('/disk.d64',new Uint8Array(data));
     setS('DISK MOUNTED: '+(diskName||''));
