@@ -241,7 +241,7 @@ body.play-mode #rz2 { display:none; }
 
 <div id="top">
   <div class="logo"><b>★</b> C64 DISK MANAGER <b>★</b></div>
-  <span id="ver">V7.0</span>
+  <span id="ver">V7.1</span>
   <span id="clk"></span>
 </div>
 
@@ -451,9 +451,13 @@ function buildSrcdoc(gameUrl,gameName){
 }
 
 function startEmu(data, gameName, title, sub){
+  // Revokuj starý blob až teď (předchozí hra už nepotřebuje)
   if(emuBlobUrl){URL.revokeObjectURL(emuBlobUrl);emuBlobUrl=null;}
+
   const blob=new Blob([data],{type:'application/octet-stream'});
-  emuBlobUrl=URL.createObjectURL(blob);
+  const url=URL.createObjectURL(blob);
+  emuBlobUrl=url;
+
   document.getElementById('ep-title').textContent=title;
   document.getElementById('ep-sub').textContent=sub;
   document.getElementById('prev-info').textContent=sub;
@@ -461,20 +465,21 @@ function startEmu(data, gameName, title, sub){
   document.body.classList.add('has-game');
   document.body.classList.add('play-mode');
 
-  // Odstraň starý iframe a vytvoř nový — uvolní WASM paměť
+  // Odstraň starý iframe — uvolní WASM paměť předchozí instance
   const prevBody=document.getElementById('prev-body');
   const oldFrame=document.getElementById('emu-frame');
   if(oldFrame) oldFrame.remove();
+
   const frame=document.createElement('iframe');
   frame.id='emu-frame';
   frame.setAttribute('allowfullscreen','');
   frame.setAttribute('allow','autoplay; gamepad');
-  // Vlož před prev-info (poslední element), za placeholder
-  const prevInfo=document.getElementById('prev-info');
-  prevBody.insertBefore(frame, prevInfo);
+  prevBody.insertBefore(frame, document.getElementById('prev-info'));
 
-  const url=emuBlobUrl;
-  setTimeout(()=>{ frame.srcdoc=buildSrcdoc(url,gameName); },150);
+  setTimeout(()=>{
+    frame.srcdoc=buildSrcdoc(url, gameName);
+    // Revokuj blob až po dalším startu — ne teď
+  }, 250);
 }
 
 function launchPrg(entry){
