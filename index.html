@@ -229,7 +229,7 @@ body.play-mode #rz2 { display:none; }
 
 <div id="top">
   <div class="logo"><b>★</b> C64 DISK MANAGER <b>★</b></div>
-  <span id="ver">V6.0</span>
+  <span id="ver">V6.1</span>
   <span id="clk"></span>
 </div>
 
@@ -418,11 +418,12 @@ function makeEmptyD64(){
 }
 
 function buildSrcdoc(gameUrl){
+  const hasGame=!!(gameUrl);
   const js=[
     'window.EJS_player='+JSON.stringify('#game')+';',
     'window.EJS_core='+JSON.stringify('vice_x64sc')+';',
-    'window.EJS_gameUrl='+JSON.stringify(gameUrl)+';',
-    'window.EJS_gameName='+JSON.stringify('disk.d64')+';',
+    hasGame?('window.EJS_gameUrl='+JSON.stringify(gameUrl)+';'):'',
+    hasGame?('window.EJS_gameName='+JSON.stringify('disk.d64')+';'):'',
     'window.EJS_pathtodata='+JSON.stringify('https://cdn.emulatorjs.org/stable/data/')+';',
     'window.EJS_startOnLoaded=true;',
     'window.EJS_coreSettings={"vice_keyboard_passthrough":"enabled","vice_drive_true_emulation":"enabled"};',
@@ -431,7 +432,7 @@ function buildSrcdoc(gameUrl){
     'window.EJS_color="#3535c0";',
     'window.EJS_AdUrl="";',
     'window.EJS_Buttons={playPause:false,restart:true,mute:true,settings:true,fullscreen:true,saveState:true,loadState:true,screenRecord:false,gamepad:true,cheat:false,volume:true};',
-  ].join('\n');
+  ].filter(Boolean).join('\n');
   const onStart=[
     'window.EJS_onGameStart=function(){',
     '  var tries=0,iv=setInterval(function(){',
@@ -499,9 +500,9 @@ function mountOnly(){
   const diskName=name;
 
   setTimeout(()=>{
-    frame.srcdoc=buildSrcdoc(emuBlobUrl);
+    frame.srcdoc=buildSrcdoc(null); // bez gameUrl → VICE startuje bez disku
     emuRunning=true;
-    // Po načtení emulátoru swapneme reálnou disketu
+    // Po načtení emulátoru mountneme reálnou disketu
     let tries=0;
     const iv=setInterval(()=>{
       if(++tries>120){clearInterval(iv);setS('TIMEOUT: manual swap needed');return;}
