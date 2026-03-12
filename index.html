@@ -464,18 +464,22 @@ function swapDiskInFS(data, diskName){
     try{FS.unlink('/disk.d64');}catch(e){}
     FS.writeFile('/disk.d64',new Uint8Array(data));
 
-    // Debug po zápisu
+    // Debug po zápisu - hledáme kde je původní empty.prg
     try{
       console.log('FS root after write:',FS.readdir('/'));
-      function lsR(path){
+      function lsR(path,depth){
+        if(depth>4)return;
         try{
           FS.readdir(path).filter(x=>x!='.'&&x!='..').forEach(x=>{
             const full=path+'/'+x;
-            try{lsR(full);}catch(e){console.log('FILE:',full);}
+            try{
+              FS.readdir(full);
+              lsR(full,depth+1);
+            }catch(e){console.log('FILE:',full);}
           });
-        }catch(e){console.log('FILE:',path);}
+        }catch(e){}
       }
-      lsR('/vice');
+      lsR('/',0);
     }catch(e){console.log('debug err',e);}
 
     setS('DISK MOUNTED: '+(diskName||''));
