@@ -229,7 +229,7 @@ body.play-mode #rz2 { display:none; }
 
 <div id="top">
   <div class="logo"><b>★</b> C64 DISK MANAGER <b>★</b></div>
-  <span id="ver">V4.7</span>
+  <span id="ver">V4.8</span>
   <span id="clk"></span>
 </div>
 
@@ -432,19 +432,6 @@ function buildSrcdoc(gameUrl,gameName){
     'window.EJS_color="#3535c0";',
     'window.EJS_AdUrl="";',
     'window.EJS_Buttons={playPause:false,restart:true,mute:true,settings:true,fullscreen:true,saveState:true,loadState:true,screenRecord:false,gamepad:true,cheat:false,volume:true};',
-    'window.addEventListener("message",function(ev){',
-    '  if(!ev.data||ev.data.type!=="swapDisk")return;',
-    '  var tries=0,iv=setInterval(function(){',
-    '    if(++tries>60){clearInterval(iv);return;}',
-    '    var FS=window.EJS_emulator&&window.EJS_emulator.Module&&window.EJS_emulator.Module.FS;',
-    '    if(!FS)return;',
-    '    clearInterval(iv);',
-    '    fetch(ev.data.url).then(function(r){return r.arrayBuffer();}).then(function(buf){',
-    '      try{FS.unlink("/disk.d64");}catch(e){}',
-    '      FS.writeFile("/disk.d64",new Uint8Array(buf));',
-    '    });',
-    '  },250);',
-    '});',
   ].join('\n');
   const onStart=[
     'window.EJS_onGameStart=function(){',
@@ -500,16 +487,14 @@ function mountOnly(){
   const frame=document.getElementById('emu-frame');
   if(!frame||!frame.contentWindow){setS('NO EMULATOR RUNNING');return;}
 
-  if(emuBlobUrl){URL.revokeObjectURL(emuBlobUrl);emuBlobUrl=null;}
-  const blob=new Blob([curDisk.data],{type:'application/octet-stream'});
-  emuBlobUrl=URL.createObjectURL(blob);
+  const cw=frame.contentWindow;
+  const FS=cw.EJS_emulator&&cw.EJS_emulator.Module&&cw.EJS_emulator.Module.FS;
+  if(!FS){setS('EMULATOR NOT READY');return;}
 
-  // Pošli do iframu instrukci pro výměnu diskety přes postMessage
-  frame.contentWindow.postMessage({
-    type:'swapDisk',
-    url: emuBlobUrl,
-    name:'disk.d64'
-  },'*');
+  if(emuBlobUrl){URL.revokeObjectURL(emuBlobUrl);emuBlobUrl=null;}
+
+  try{FS.unlink('/disk.d64');}catch(e){}
+  FS.writeFile('/disk.d64', new Uint8Array(curDisk.data));
   setS('DISK SWAPPED: '+curDisk.diskName.trim());
 }
 
