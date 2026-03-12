@@ -125,7 +125,19 @@ body { background:var(--bg); display:flex; flex-direction:column; font-family:va
 .ntog { width:14px; flex-shrink:0; text-align:center; font-size:13px; color:var(--c64txt); }
 .nn { font-size:13px; line-height:18px; font-weight:700; letter-spacing:.5px; text-transform:uppercase; flex:1; overflow:hidden; text-overflow:ellipsis; color:var(--c64txt); }
 .nn.fld { color:var(--c64white); }
-.nn.d64 { color:var(--c64cyan); }
+#joy-sel {
+  flex-shrink:0; border-top:1px solid var(--c64bord);
+  background:var(--c64dark); z-index:6;
+}
+.joy-row {
+  padding:4px 10px; font-size:10px; letter-spacing:1px; color:var(--c64txt);
+  cursor:pointer; display:flex; align-items:center; gap:6px; text-transform:uppercase;
+  transition:background .1s;
+}
+.joy-row:hover { background:rgba(112,112,232,.12); }
+.joy-row.active { color:var(--c64cyan); background:rgba(24,216,216,.08); }
+.joy-dot { width:10px; font-size:10px; color:var(--c64cyan); }
+.joy-row:not(.active) .joy-dot { color:transparent; }
 .nsz { font-size:10px; color:var(--c64bord); flex-shrink:0; margin-left:4px; }
 
 /* MIDDLE PANEL - emulator — vždy zabírá místo */
@@ -229,7 +241,7 @@ body.play-mode #rz2 { display:none; }
 
 <div id="top">
   <div class="logo"><b>★</b> C64 DISK MANAGER <b>★</b></div>
-  <span id="ver">V6.7</span>
+  <span id="ver">V6.8</span>
   <span id="clk"></span>
 </div>
 
@@ -254,6 +266,14 @@ body.play-mode #rz2 { display:none; }
       <input class="tfl" id="tflt" placeholder="SEARCH...">
     </div>
     <div id="tw"><div id="tree"></div></div>
+    <div id="joy-sel">
+      <div class="joy-row" id="joy1" data-port="1">
+        <span class="joy-dot" id="joy1-dot"></span>JOY PORT 1
+      </div>
+      <div class="joy-row active" id="joy2" data-port="2">
+        <span class="joy-dot" id="joy2-dot">▶</span>JOY PORT 2
+      </div>
+    </div>
     <div class="pfoot" id="lpfoot" style="display:none">
       <span>DIR:<b id="pf">0</b></span>
       <span>D64:<b id="pd">0</b></span>
@@ -388,6 +408,7 @@ function parseD64(buf){
 // ══ STATE ════════════════════════════════════════════════════════
 let curDisk=null,curDiskPath='',entries_ref=[],emuBlobUrl=null;
 let roots=[],expanded=new Set(),selNode=null,flatNodes=[];
+let joyPort=2;
 
 // ══ EMULATOR ════════════════════════════════════════════════════
 
@@ -415,7 +436,7 @@ function buildSrcdoc(gameUrl,gameName){
     '    clearInterval(iv);',
     '    try{e.changeSettingOption("vice_physical_keyboard_pass_through","enabled");',
     '    e.changeSettingOption("keyboardInput","enabled");',
-    '    e.changeSettingOption("vice_joyport","2");',
+    '    e.changeSettingOption("vice_joyport","'+joyPort+'");',
     '    e.changeSettingOption("vice_drive_true_emulation","enabled");',
     '    }catch(ex){}',
     '  },250);',
@@ -665,6 +686,18 @@ document.getElementById('btnC').addEventListener('click',()=>{expanded.clear();i
 document.getElementById('btnE').addEventListener('click',()=>{function ea(n){expanded.add(n.path);n.children.forEach(ea);}roots.forEach(ea);renderTree();});
 document.getElementById('btnR').addEventListener('click',()=>fi.click());
 document.addEventListener('keydown',e=>{if(e.key==='F5'){e.preventDefault();fi.click();}});
+
+// Joy port selector
+document.querySelectorAll('.joy-row').forEach(row=>{
+  row.addEventListener('click',()=>{
+    joyPort=+row.dataset.port;
+    document.querySelectorAll('.joy-row').forEach(r=>r.classList.remove('active'));
+    document.querySelectorAll('.joy-dot').forEach(d=>d.textContent='');
+    row.classList.add('active');
+    row.querySelector('.joy-dot').textContent='▶';
+    setS('JOY PORT '+joyPort+' ACTIVE');
+  });
+});
 
 // ══ RESIZERS ════════════════════════════════════════════════════
 function makeResizer(rzId,el,invert){
