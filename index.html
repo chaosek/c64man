@@ -229,7 +229,7 @@ body.play-mode #rz2 { display:none; }
 
 <div id="top">
   <div class="logo"><b>★</b> C64 DISK MANAGER <b>★</b></div>
-  <span id="ver">V5.8</span>
+  <span id="ver">V5.9</span>
   <span id="clk"></span>
 </div>
 
@@ -385,45 +385,19 @@ function parseD64(buf){
   return {diskName,diskId,free,entries,data:buf};
 }
 
-function readFileData(entry){
-  if(!curDisk)return null;
-  const d=new Uint8Array(curDisk.data);
-  const name=entry.fnVice.trim().toUpperCase();
-  let tr=18,sc=1;
-  for(let i=0;i<144;i++){
-    const off=secOff(tr,sc)+i%8*32;
-    if(d[off+2]===0)continue;
-    const ft=d[off+2]&0x07;
-    const fn=readPet(d,off+5,16);
-    if(fn.vice.trim().toUpperCase()===name&&FTYPES[ft]==='PRG'){
-      let ct=d[off+3],cs=d[off+4];
-      const bytes=[];
-      for(let guard=0;guard<1000&&ct!==0;guard++){
-        const so=secOff(ct,cs);
-        const nt=d[so],ns=d[so+1];
-        const len=nt===0?ns-1:254;
-        for(let j=2;j<2+len;j++)bytes.push(d[so+j]);
-        if(nt===0)break;
-        ct=nt;cs=ns;
-      }
-      return new Uint8Array(bytes);
-    }
-    if((i+1)%8===0){const nb=secOff(tr,sc);const nt=d[nb],ns=d[nb+1];if(!nt)break;tr=nt;sc=ns;}
-  }
-  return null;
-}
-
 // ══ STATE ════════════════════════════════════════════════════════
 let curDisk=null,curDiskPath='',entries_ref=[],emuBlobUrl=null;
 let roots=[],expanded=new Set(),selNode=null,flatNodes=[];
 
 // ══ EMULATOR ════════════════════════════════════════════════════
-function buildSrcdoc(gameUrl,gameName){
+let emuRunning=false;
+
+function buildSrcdoc(gameUrl){
   const js=[
     'window.EJS_player='+JSON.stringify('#game')+';',
     'window.EJS_core='+JSON.stringify('vice_x64sc')+';',
     'window.EJS_gameUrl='+JSON.stringify(gameUrl)+';',
-    'window.EJS_gameName='+JSON.stringify(gameName)+';',
+    'window.EJS_gameName='+JSON.stringify('disk.d64')+';',
     'window.EJS_pathtodata='+JSON.stringify('https://cdn.emulatorjs.org/stable/data/')+';',
     'window.EJS_startOnLoaded=true;',
     'window.EJS_coreSettings={"vice_keyboard_passthrough":"enabled","vice_drive_true_emulation":"enabled"};',
@@ -456,53 +430,45 @@ function buildSrcdoc(gameUrl,gameName){
     +'</body></html>';
 }
 
-function startEmu(gameUrl, gameName, title, sub, info){
-  document.getElementById('ep-title').textContent=title;
-  document.getElementById('ep-sub').textContent=sub;
-  document.getElementById('prev-info').textContent=info;
+function mountOnly(){
+  if(!curDisk){setS('NO DISK LOADED');return;}
+
+  // Emulator běží → jen vyměníme soubor v FS
+  if(emuRunning){
+    const frame=document.getElementById('emu-frame');
+    const cw=frame&&frame.contentWindow;
+    const FS=cw&&cw.EJS_emulator&&cw.EJS_emulator.gameManager&&cw.EJS_emulator.gameManager.FS;
+    if(FS){
+      try{
+        try{FS.unlink('/disk.d64');}catch(e){}
+        FS.writeFile('/disk.d64',new Uint8Array(curDisk.data));
+        setS('DISK SWAPPED: '+curDisk.diskName.trim());
+        document.getElementById('ep-title').textContent=curDisk.diskName.trim()||'DISK';
+      }catch(e){setS('SWAP ERROR: '+e.message);}
+      return;
+    }
+    // FS nedostupný — fallback na restart
+  }
+
+  // Emulator neběží → spustíme nový
+  if(emuBlobUrl){URL.revokeObjectURL(emuBlobUrl);emuBlobUrl=null;}
+  const blob=new Blob([curDisk.data],{type:'application/octet-stream'});
+  emuBlobUrl=URL.createObjectURL(blob);
+
+  const name=curDisk.diskName.trim()||'DISK';
+  document.getElementById('ep-title').textContent=name;
+  document.getElementById('ep-sub').textContent='D64 MOUNTED';
+  document.getElementById('prev-info').textContent='D64';
   document.getElementById('emu-placeholder').style.display='none';
   document.body.classList.add('has-game');
   document.body.classList.add('play-mode');
 
   const frame=document.getElementById('emu-frame');
   frame.srcdoc='';
-  setTimeout(()=>{ frame.srcdoc=buildSrcdoc(gameUrl,gameName); },150);
-}
-
-function launchEmulator(entry){
-  if(!curDisk){setS('NO DISK');return;}
-  if(emuBlobUrl){URL.revokeObjectURL(emuBlobUrl);emuBlobUrl=null;}
-
-  const prg=readFileData(entry);
-  if(!prg||!prg.length){setS('EMPTY FILE');return;}
-
-  const blob=new Blob([prg],{type:'application/octet-stream'});
-  emuBlobUrl=URL.createObjectURL(blob);
-  const gameName=(entry.fnVice||entry.filename).trim()+'.prg';
-  startEmu(emuBlobUrl, gameName, entry.filename, entry.type+' · '+entry.blocks+' BLK', 'PRG·'+entry.blocks+'BLK');
-}
-
-function mountDisk(){
-  if(!curDisk){setS('NO DISK LOADED');return;}
-  if(emuBlobUrl){URL.revokeObjectURL(emuBlobUrl);emuBlobUrl=null;}
-  const blob=new Blob([curDisk.data],{type:'application/octet-stream'});
-  emuBlobUrl=URL.createObjectURL(blob);
-  const name=curDisk.diskName.trim()||'DISK';
-  startEmu(emuBlobUrl,'disk.d64',name,'D64 MOUNTED','D64');
-}
-
-function mountOnly(){
-  if(!curDisk){setS('NO DISK LOADED');return;}
-  const frame=document.getElementById('emu-frame');
-  if(!frame||!frame.contentWindow){setS('NO EMULATOR RUNNING');return;}
-  const cw=frame.contentWindow;
-  const FS=cw.EJS_emulator&&cw.EJS_emulator.gameManager&&cw.EJS_emulator.gameManager.FS;
-  if(!FS){setS('EMULATOR NOT READY');return;}
-  try{
-    try{FS.unlink('/disk.d64');}catch(e){}
-    FS.writeFile('/disk.d64',new Uint8Array(curDisk.data));
-    setS('DISK SWAPPED: '+curDisk.diskName.trim());
-  }catch(e){setS('SWAP ERROR: '+e.message);}
+  setTimeout(()=>{
+    frame.srcdoc=buildSrcdoc(emuBlobUrl);
+    emuRunning=true;
+  },150);
 }
 
 // ══ DIRECTORY RENDERER ══════════════════════════════════════════
@@ -514,9 +480,8 @@ function renderDir(info,name){
   const lines=[];
   const dn=info.diskName.padEnd(16,' ');
 
-  // MOUNT řádky — úplně první
-  lines.push('<div class="dl entry mount-entry"><span class="d-blk">    ▶ </span><span class="d-fn">&quot;MOUNT &amp; LOAD      &quot; </span><span class="t-prg">D64</span></div>');
-  lines.push('<div class="dl entry mountonly-entry"><span class="d-blk">      </span><span class="d-fn">&quot;MOUNT ONLY         &quot; </span><span class="t-seq">D64</span></div>');
+  // MOUNT řádek
+  lines.push('<div class="dl entry mount-entry"><span class="d-blk">    ▶ </span><span class="d-fn">&quot;MOUNT ONLY         &quot; </span><span class="t-seq">D64</span></div>');
 
   // Prázdný řádek
   lines.push('<div class="dl"> </div>');
@@ -539,11 +504,7 @@ function renderDir(info,name){
   scr.innerHTML=lines.join('');
   scr.scrollTop=0;
 
-  scr.querySelector('.mount-entry').addEventListener('click',mountDisk);
-  scr.querySelector('.mountonly-entry').addEventListener('click',mountOnly);
-  scr.querySelectorAll('.dl.entry:not(.mount-entry):not(.mountonly-entry)').forEach(el=>{
-    el.addEventListener('click',()=>launchEmulator(info.entries[+el.dataset.i]));
-  });
+  scr.querySelector('.mount-entry').addEventListener('click',mountOnly);
 
   document.getElementById('dp-title').textContent='*** '+info.diskName.trim()+' ***';
   document.getElementById('dp-sub').textContent=info.entries.length+' FILES';
