@@ -241,7 +241,7 @@ body.play-mode #rz2 { display:none; }
 
 <div id="top">
   <div class="logo"><b>★</b> C64 DISK MANAGER <b>★</b></div>
-  <span id="ver">V6.9</span>
+  <span id="ver">V7.0</span>
   <span id="clk"></span>
 </div>
 
@@ -469,7 +469,9 @@ function startEmu(data, gameName, title, sub){
   frame.id='emu-frame';
   frame.setAttribute('allowfullscreen','');
   frame.setAttribute('allow','autoplay; gamepad');
-  prevBody.insertBefore(frame, prevBody.firstChild);
+  // Vlož před prev-info (poslední element), za placeholder
+  const prevInfo=document.getElementById('prev-info');
+  prevBody.insertBefore(frame, prevInfo);
 
   const url=emuBlobUrl;
   setTimeout(()=>{ frame.srcdoc=buildSrcdoc(url,gameName); },150);
