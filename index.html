@@ -229,7 +229,7 @@ body.play-mode #rz2 { display:none; }
 
 <div id="top">
   <div class="logo"><b>★</b> C64 DISK MANAGER <b>★</b></div>
-  <span id="ver">V5.0</span>
+  <span id="ver">V5.1</span>
   <span id="clk"></span>
 </div>
 
@@ -426,12 +426,12 @@ function buildSrcdoc(gameUrl,gameName){
     'window.EJS_gameName='+JSON.stringify(gameName)+';',
     'window.EJS_pathtodata='+JSON.stringify('https://cdn.emulatorjs.org/stable/data/')+';',
     'window.EJS_startOnLoaded=true;',
-    'window.EJS_coreSettings={"vice_keyboard_passthrough":"enabled"};',
+    'window.EJS_coreSettings={"vice_keyboard_passthrough":"enabled","vice_drive_true_emulation":"enabled"};',
     'window.EJS_language="en-US";',
     'window.EJS_backgroundColor="#000000";',
     'window.EJS_color="#3535c0";',
     'window.EJS_AdUrl="";',
-    'window.EJS_Buttons={playPause:false,restart:true,mute:true,settings:true,fullscreen:true,saveState:true,loadState:true,screenRecord:false,gamepad:true,cheat:false,volume:true,changeDisc:true};',
+    'window.EJS_Buttons={playPause:false,restart:true,mute:true,settings:true,fullscreen:true,saveState:true,loadState:true,screenRecord:false,gamepad:true,cheat:false,volume:true,disc:true};',
   ].join('\n');
   const onStart=[
     'window.EJS_onGameStart=function(){',
@@ -443,6 +443,7 @@ function buildSrcdoc(gameUrl,gameName){
     '    try{e.changeSettingOption("vice_physical_keyboard_pass_through","enabled");',
     '    e.changeSettingOption("keyboardInput","enabled");',
     '    e.changeSettingOption("vice_joyport","2");',
+    '    e.changeSettingOption("vice_drive_true_emulation","enabled");',
     '    }catch(ex){}',
     '  },250);',
     '};',
