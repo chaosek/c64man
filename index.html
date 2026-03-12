@@ -229,7 +229,7 @@ body.play-mode #rz2 { display:none; }
 
 <div id="top">
   <div class="logo"><b>★</b> C64 DISK MANAGER <b>★</b></div>
-  <span id="ver">V6.6</span>
+  <span id="ver">V6.7</span>
   <span id="clk"></span>
 </div>
 
@@ -429,10 +429,23 @@ function buildSrcdoc(gameUrl,gameName){
     +'</body></html>';
 }
 
+function startEmu(data, gameName, title, sub){
+  if(emuBlobUrl){URL.revokeObjectURL(emuBlobUrl);emuBlobUrl=null;}
+  const blob=new Blob([data],{type:'application/octet-stream'});
+  emuBlobUrl=URL.createObjectURL(blob);
+  document.getElementById('ep-title').textContent=title;
+  document.getElementById('ep-sub').textContent=sub;
+  document.getElementById('prev-info').textContent=sub;
+  document.getElementById('emu-placeholder').style.display='none';
+  document.body.classList.add('has-game');
+  document.body.classList.add('play-mode');
+  const frame=document.getElementById('emu-frame');
+  frame.srcdoc='';
+  setTimeout(()=>{ frame.srcdoc=buildSrcdoc(emuBlobUrl,gameName); },150);
+}
+
 function launchPrg(entry){
   if(!curDisk){setS('NO DISK');return;}
-  if(emuBlobUrl){URL.revokeObjectURL(emuBlobUrl);emuBlobUrl=null;}
-  // Extrahuj PRG ze D64
   const d=new Uint8Array(curDisk.data);
   function secOff(t,s){
     const tOff=[0,0,21,42,63,84,105,126,147,168,189,210,231,252,273,294,315,336,357,376,395,414,433,452,471,490,508,526,544,562,580,598,615,632,649,666];
@@ -469,31 +482,13 @@ function launchPrg(entry){
     if(nt===0)break;
     ct=nt;cs=ns;
   }
-  const prg=new Uint8Array(bytes);
-  const blob=new Blob([prg],{type:'application/octet-stream'});
-  emuBlobUrl=URL.createObjectURL(blob);
-  const gameName=entry.filename.trim()+'.prg';
-  const n=entry.filename.trim();
-  document.getElementById('ep-title').textContent=n;
-  document.getElementById('ep-sub').textContent='PRG · '+entry.blocks+' BLK';
-  document.getElementById('prev-info').textContent='PRG';
-  document.getElementById('emu-placeholder').style.display='none';
-  document.body.classList.add('has-game');
-  document.body.classList.add('play-mode');
-  const frame=document.getElementById('emu-frame');
-  frame.srcdoc='';
-  setTimeout(()=>{ frame.srcdoc=buildSrcdoc(emuBlobUrl,gameName); },150);
+  startEmu(new Uint8Array(bytes), entry.filename.trim()+'.prg', entry.filename.trim(), 'PRG·'+entry.blocks+'BLK');
 }
+
 function mountOnly(){
   if(!curDisk){setS('NO DISK LOADED');return;}
-  document.getElementById('ep-sub').textContent='D64 MOUNTED';
-  document.getElementById('prev-info').textContent='D64';
-  document.getElementById('emu-placeholder').style.display='none';
-  document.body.classList.add('has-game');
-  document.body.classList.add('play-mode');
-  const frame=document.getElementById('emu-frame');
-  frame.srcdoc='';
-  setTimeout(()=>{ frame.srcdoc=buildSrcdoc(emuBlobUrl,'disk.d64'); },150);
+  const name=curDisk.diskName.trim()||'DISK';
+  startEmu(curDisk.data, 'disk.d64', name, 'D64');
 }
 
 // ══ DIRECTORY RENDERER ══════════════════════════════════════════
