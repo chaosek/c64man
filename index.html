@@ -141,6 +141,10 @@ body { background:var(--bg); display:flex; flex-direction:column; font-family:va
 }
 #emu-frame { position:absolute; inset:0; width:100%!important; height:100%!important; border:none; }
 .prev-info { position:absolute; bottom:4px; right:8px; font-size:9px; color:rgba(80,80,180,.4); letter-spacing:1px; text-transform:uppercase; z-index:3; }
+#disk-nav { position:absolute; bottom:28px; left:50%; transform:translateX(-50%); display:flex; align-items:center; gap:8px; z-index:4; background:rgba(0,0,40,.8); padding:4px 10px; border:1px solid var(--c64bord); }
+.dnav-btn { background:var(--c64bg); border:1px solid var(--c64bord); color:var(--c64cyan); font-family:var(--font); font-size:9px; font-weight:700; letter-spacing:1px; padding:2px 8px; cursor:pointer; }
+.dnav-btn:hover { background:var(--c64inv); color:var(--c64invfg); }
+#disk-nav-label { font-size:9px; color:var(--c64txt); letter-spacing:1px; min-width:30px; text-align:center; }
 
 /* RIGHT PANEL - directory */
 #dp { flex:0 0 420px; min-width:0; transition:flex-basis .3s ease; overflow:hidden; }
@@ -230,7 +234,7 @@ body.play-mode #rz2 { display:none; }
 
 <div id="top">
   <div class="logo"><b>★</b> C64 DISK MANAGER <b>★</b></div>
-  <span id="ver">V5.3</span>
+  <span id="ver">V5.4</span>
   <span id="clk"></span>
 </div>
 
@@ -279,6 +283,11 @@ body.play-mode #rz2 { display:none; }
       </div>
       <iframe id="emu-frame"></iframe>
       <div class="prev-info" id="prev-info"></div>
+      <div id="disk-nav" style="display:none">
+        <button class="dnav-btn" id="btnPrevDisk">◀ DISK</button>
+        <span id="disk-nav-label">1/1</span>
+        <button class="dnav-btn" id="btnNextDisk">DISK ▶</button>
+      </div>
     </div>
   </div>
 
@@ -415,7 +424,7 @@ function readFileData(entry){
 }
 
 // ══ STATE ════════════════════════════════════════════════════════
-let curDisk=null,curDiskPath='',entries_ref=[],emuBlobUrl=null,curM3uDisks=null;
+let curDisk=null,curDiskPath='',entries_ref=[],emuBlobUrl=null,curM3uDisks=null,curDiskIndex=0;
 let roots=[],expanded=new Set(),selNode=null,flatNodes=[];
 
 // ══ EMULATOR ════════════════════════════════════════════════════
@@ -484,6 +493,69 @@ function launchEmulator(entry){
   startEmu(emuBlobUrl, gameName, entry.filename, entry.type+' · '+entry.blocks+' BLK', 'PRG·'+entry.blocks+'BLK', null);
 }
 
+function updateDiskNav(){
+  if(!curM3uDisks||curM3uDisks.length<=1){document.getElementById('disk-nav').style.display='none';return;}
+  document.getElementById('disk-nav').style.display='flex';
+  document.getElementById('disk-nav-label').textContent=(curDiskIndex+1)+'/'+curM3uDisks.length;
+  document.getElementById('btnPrevDisk').disabled=curDiskIndex===0;
+  document.getElementById('btnNextDisk').disabled=curDiskIndex===curM3uDisks.length-1;
+}
+
+function swapToDisk(idx){
+  if(!curM3uDisks||idx<0||idx>=curM3uDisks.length)return;
+  const frame=document.getElementById('emu-frame');
+  const cw=frame&&frame.contentWindow;
+
+  // Ulož state pokud emulator běží
+  const saveAndSwap=()=>{
+    const emu=cw&&cw.EJS_emulator;
+    if(emu&&emu.gameManager){
+      try{
+        const state=emu.gameManager.saveState();
+        doSwap(state);
+        return;
+      }catch(e){}
+    }
+    doSwap(null);
+  };
+
+  const doSwap=(savedState)=>{
+    curDiskIndex=idx;
+    const f=curM3uDisks[idx];
+    const r=new FileReader();
+    r.onload=ev=>{
+      const data=new Uint8Array(ev.target.result);
+      // Načti D64 adresář
+      try{const info=parseD64(ev.target.result);curDisk=info;renderDir(info,f.name);}catch(e){}
+      // Vyměn disk v běžícím emulátoru přes FS
+      const emu=cw&&cw.EJS_emulator;
+      if(emu&&emu.gameManager&&emu.gameManager.FS){
+        try{
+          const FS=emu.gameManager.FS;
+          try{FS.unlink('/disk.d64');}catch(e){}
+          FS.writeFile('/disk.d64',data);
+          setS('DISK '+(idx+1)+': '+f.name);
+          updateDiskNav();
+          // Načti state zpět pokud byl uložen
+          if(savedState){
+            setTimeout(()=>{try{emu.gameManager.loadState(savedState);}catch(e){}},200);
+          }
+        }catch(e){setS('SWAP ERROR: '+e.message);}
+      } else {
+        // Emulator neběží — spusť nový
+        if(emuBlobUrl){URL.revokeObjectURL(emuBlobUrl);emuBlobUrl=null;}
+        const blob=new Blob([data],{type:'application/octet-stream'});
+        emuBlobUrl=URL.createObjectURL(blob);
+        startEmu(emuBlobUrl,'disk.d64',f.name,'DISK '+(idx+1)+'/'+curM3uDisks.length,'D64',null);
+        updateDiskNav();
+      }
+    };
+    r.readAsArrayBuffer(f);
+  };
+
+  saveAndSwap();
+}
+
 function mountDisk(){
   if(!curDisk){setS('NO DISK LOADED');return;}
   if(emuBlobUrl){URL.revokeObjectURL(emuBlobUrl);emuBlobUrl=null;}
@@ -512,6 +584,8 @@ function mountDisk(){
       emuBlobUrl=m3uUrl;
       const name=curDisk.diskName.trim()||'DISK';
       startEmu(m3uUrl,'playlist.m3u',name,'M3U ('+disks.length+' DISKS)','M3U',paths);
+      curDiskIndex=0;
+      setTimeout(updateDiskNav,200);
     });
   } else {
     const blob=new Blob([curDisk.data],{type:'application/octet-stream'});
@@ -729,6 +803,8 @@ document.getElementById('tflt').addEventListener('input',renderTree);
 document.getElementById('btnC').addEventListener('click',()=>{expanded.clear();if(roots.length)expanded.add(roots[0].path);renderTree();});
 document.getElementById('btnE').addEventListener('click',()=>{function ea(n){expanded.add(n.path);n.children.forEach(ea);}roots.forEach(ea);renderTree();});
 document.getElementById('btnR').addEventListener('click',()=>fi.click());
+document.getElementById('btnPrevDisk').addEventListener('click',()=>swapToDisk(curDiskIndex-1));
+document.getElementById('btnNextDisk').addEventListener('click',()=>swapToDisk(curDiskIndex+1));
 document.addEventListener('keydown',e=>{if(e.key==='F5'){e.preventDefault();fi.click();}});
 
 // ══ RESIZERS ════════════════════════════════════════════════════
