@@ -229,7 +229,7 @@ body.play-mode #rz2 { display:none; }
 
 <div id="top">
   <div class="logo"><b>★</b> C64 DISK MANAGER <b>★</b></div>
-  <span id="ver">V4.0</span>
+  <span id="ver">V4.2</span>
   <span id="clk"></span>
 </div>
 
@@ -426,15 +426,27 @@ function buildSrcdoc(gameUrl,gameName){
     'window.EJS_gameName='+JSON.stringify(gameName)+';',
     'window.EJS_pathtodata='+JSON.stringify('https://cdn.emulatorjs.org/stable/data/')+';',
     'window.EJS_startOnLoaded=true;',
-    'window.EJS_coreSettings={"vice_keyboard_passthrough":"enabled"};',
+    'window.EJS_coreSettings={"vice_keyboard_passthrough":"enabled","vice_drive_true_emulation":"disabled"};',
     'window.EJS_language="en-US";',
     'window.EJS_backgroundColor="#000000";',
     'window.EJS_color="#3535c0";',
     'window.EJS_AdUrl="";',
     'window.EJS_Buttons={playPause:false,restart:true,mute:true,settings:true,fullscreen:true,saveState:true,loadState:true,screenRecord:false,gamepad:true,cheat:false,volume:true};',
+    'window.addEventListener("message",function(ev){',
+    '  if(!ev.data||ev.data.type!=="swapDisk")return;',
+    '  var tries=0,iv=setInterval(function(){',
+    '    if(++tries>60){clearInterval(iv);return;}',
+    '    var FS=window.EJS_emulator&&window.EJS_emulator.Module&&window.EJS_emulator.Module.FS;',
+    '    if(!FS)return;',
+    '    clearInterval(iv);',
+    '    fetch(ev.data.url).then(function(r){return r.arrayBuffer();}).then(function(buf){',
+    '      try{FS.unlink("/disk.d64");}catch(e){}',
+    '      FS.writeFile("/disk.d64",new Uint8Array(buf));',
+    '    });',
+    '  },250);',
+    '});',
   ].join('\n');
   const onStart=[
-    'window.EJS_onGameStart=function(){',
     '  var tries=0,iv=setInterval(function(){',
     '    if(++tries>60){clearInterval(iv);return;}',
     '    var e=window.EJS_emulator;',
@@ -490,6 +502,24 @@ function launchEmulator(entry){
   startEmu(emuBlobUrl, gameName, entry.filename, entry.type+' · '+entry.blocks+' BLK', 'PRG·'+entry.blocks+'BLK');
 }
 
+function mountOnly(){
+  if(!curDisk){setS('NO DISK LOADED');return;}
+  const frame=document.getElementById('emu-frame');
+  if(!frame||!frame.contentWindow){setS('NO EMULATOR RUNNING');return;}
+
+  if(emuBlobUrl){URL.revokeObjectURL(emuBlobUrl);emuBlobUrl=null;}
+  const blob=new Blob([curDisk.data],{type:'application/octet-stream'});
+  emuBlobUrl=URL.createObjectURL(blob);
+
+  // Pošli do iframu instrukci pro výměnu diskety přes postMessage
+  frame.contentWindow.postMessage({
+    type:'swapDisk',
+    url: emuBlobUrl,
+    name:'disk.d64'
+  },'*');
+  setS('DISK SWAPPED: '+curDisk.diskName.trim());
+}
+
 function mountDisk(){
   if(!curDisk){setS('NO DISK LOADED');return;}
   if(emuBlobUrl){URL.revokeObjectURL(emuBlobUrl);emuBlobUrl=null;}
@@ -509,8 +539,9 @@ function renderDir(info,name){
   const lines=[];
   const dn=info.diskName.padEnd(16,' ');
 
-  // MOUNT řádek — úplně první
-  lines.push('<div class="dl entry mount-entry"><span class="d-blk">    ▶ </span><span class="d-fn">&quot;MOUNT DISK IMAGE&quot; </span><span class="t-prg">D64</span></div>');
+  // MOUNT řádky — úplně první
+  lines.push('<div class="dl entry mount-entry"><span class="d-blk">    ▶ </span><span class="d-fn">&quot;MOUNT &amp; LOAD      &quot; </span><span class="t-prg">D64</span></div>');
+  lines.push('<div class="dl entry mountonly-entry"><span class="d-blk">      </span><span class="d-fn">&quot;MOUNT ONLY         &quot; </span><span class="t-seq">D64</span></div>');
 
   // Prázdný řádek
   lines.push('<div class="dl"> </div>');
@@ -534,6 +565,7 @@ function renderDir(info,name){
   scr.scrollTop=0;
 
   scr.querySelector('.mount-entry').addEventListener('click',mountDisk);
+  scr.querySelector('.mountonly-entry').addEventListener('click',mountOnly);
   scr.querySelectorAll('.dl.entry:not(.mount-entry)').forEach(el=>{
     el.addEventListener('click',()=>launchEmulator(info.entries[+el.dataset.i]));
   });
