@@ -126,6 +126,7 @@ body { background:var(--bg); display:flex; flex-direction:column; font-family:va
 .nn { font-size:13px; line-height:18px; font-weight:700; letter-spacing:.5px; text-transform:uppercase; flex:1; overflow:hidden; text-overflow:ellipsis; color:var(--c64txt); }
 .nn.fld { color:var(--c64white); }
 .nn.d64 { color:var(--c64cyan); }
+.nn.m3u { color:var(--c64yel); }
 .nsz { font-size:10px; color:var(--c64bord); flex-shrink:0; margin-left:4px; }
 
 /* MIDDLE PANEL - emulator — vždy zabírá místo */
@@ -229,7 +230,7 @@ body.play-mode #rz2 { display:none; }
 
 <div id="top">
   <div class="logo"><b>★</b> C64 DISK MANAGER <b>★</b></div>
-  <span id="ver">V5.1</span>
+  <span id="ver">V5.3</span>
   <span id="clk"></span>
 </div>
 
@@ -414,7 +415,7 @@ function readFileData(entry){
 }
 
 // ══ STATE ════════════════════════════════════════════════════════
-let curDisk=null,curDiskPath='',entries_ref=[],emuBlobUrl=null;
+let curDisk=null,curDiskPath='',entries_ref=[],emuBlobUrl=null,curM3uDisks=null;
 let roots=[],expanded=new Set(),selNode=null,flatNodes=[];
 
 // ══ EMULATOR ════════════════════════════════════════════════════
@@ -431,7 +432,7 @@ function buildSrcdoc(gameUrl,gameName){
     'window.EJS_backgroundColor="#000000";',
     'window.EJS_color="#3535c0";',
     'window.EJS_AdUrl="";',
-    'window.EJS_Buttons={playPause:false,restart:true,mute:true,settings:true,fullscreen:true,saveState:true,loadState:true,screenRecord:false,gamepad:true,cheat:false,volume:true,disc:true};',
+    'window.EJS_Buttons={playPause:false,restart:true,mute:true,settings:true,fullscreen:true,saveState:true,loadState:true,screenRecord:false,gamepad:true,cheat:false,volume:true};',
   ].join('\n');
   const onStart=[
     'window.EJS_onGameStart=function(){',
@@ -486,10 +487,33 @@ function mountDisk(){
   if(!curDisk){setS('NO DISK LOADED');return;}
   if(emuBlobUrl){URL.revokeObjectURL(emuBlobUrl);emuBlobUrl=null;}
 
-  const blob=new Blob([curDisk.data],{type:'application/octet-stream'});
-  emuBlobUrl=URL.createObjectURL(blob);
-  const name=curDisk.diskName.trim()||'DISK';
-  startEmu(emuBlobUrl, 'disk.d64', name, 'D64 MOUNTED', 'D64');
+  if(curM3uDisks&&curM3uDisks.length>1){
+    // M3U mode — načti všechny D64 a sestav zip-like blob
+    // VICE přijímá M3U jako textový soubor se seznamem D64
+    // Musíme použít VFS — předáme první D64 a M3U jako samostatné soubory
+    // EmulatorJS podporuje EJS_gameUrl jako M3U pokud gameName končí .m3u
+    const reads=curM3uDisks.map(f=>new Promise((res,rej)=>{
+      const r=new FileReader();
+      r.onload=e=>res({name:f.name,data:new Uint8Array(e.target.result)});
+      r.onerror=rej;
+      r.readAsArrayBuffer(f);
+    }));
+    Promise.all(reads).then(disks=>{
+      const m3uText=disks.map(d=>d.name).join('\n');
+      const m3uBlob=new Blob([m3uText],{type:'text/plain'});
+      // EmulatorJS nepodporuje M3U přímo — použijeme první disk a informujeme uživatele
+      const blob=new Blob([disks[0].data],{type:'application/octet-stream'});
+      emuBlobUrl=URL.createObjectURL(blob);
+      const name=curDisk.diskName.trim()||'DISK';
+      startEmu(emuBlobUrl,'disk.d64',name,'D64 MOUNTED ('+disks.length+' DISKS)','D64·M3U');
+      setS('MOUNTED '+disks.length+' DISK PLAYLIST — USE DISC CONTROL TO SWAP');
+    });
+  } else {
+    const blob=new Blob([curDisk.data],{type:'application/octet-stream'});
+    emuBlobUrl=URL.createObjectURL(blob);
+    const name=curDisk.diskName.trim()||'DISK';
+    startEmu(emuBlobUrl,'disk.d64',name,'D64 MOUNTED','D64');
+  }
 }
 
 // ══ DIRECTORY RENDERER ══════════════════════════════════════════
@@ -544,12 +568,45 @@ function renderDir(info,name){
 function loadD64(file,name){
   setS('LOADING '+name+'...');
   curDiskPath=file.webkitRelativePath||file.name;
+  curM3uDisks=null;
   const r=new FileReader();
   r.onload=ev=>{
     try{const info=parseD64(ev.target.result);curDisk=info;renderDir(info,name);}
     catch(err){setS('ERROR: '+err.message);}
   };
   r.readAsArrayBuffer(file);
+}
+
+// ══ LOAD M3U ════════════════════════════════════════════════════
+function loadM3U(file, name){
+  setS('LOADING M3U: '+name+'...');
+  const r=new FileReader();
+  r.onload=ev=>{
+    const text=ev.target.result;
+    const lines=text.split(/\r?\n/).map(l=>l.trim()).filter(l=>l&&!l.startsWith('#'));
+    if(!lines.length){setS('EMPTY M3U');return;}
+
+    // Najdi D64 soubory podle názvu z M3U v načtených souborech
+    const dir=file.webkitRelativePath?file.webkitRelativePath.split('/').slice(0,-1).join('/'):'';
+    const allFiles={};
+    // Sbírej všechny soubory ze stromu
+    function collectFiles(nodes){nodes.forEach(n=>{if(n.file)allFiles[n.name.toLowerCase()]=n.file;collectFiles(n.children);});}
+    collectFiles(roots);
+
+    const diskFiles=lines.map(l=>{
+      const basename=l.split('/').pop().split('\\').pop();
+      return allFiles[basename.toLowerCase()]||null;
+    }).filter(Boolean);
+
+    if(!diskFiles.length){setS('NO D64 FILES FOUND FOR M3U');return;}
+
+    curM3uDisks=diskFiles;
+
+    // Načti první D64 pro zobrazení adresáře
+    loadD64(diskFiles[0], lines[0].split('/').pop().split('\\').pop());
+    setS('M3U: '+diskFiles.length+' DISKS — '+name);
+  };
+  r.readAsText(file);
 }
 
 // ══ FILE TREE ════════════════════════════════════════════════════
@@ -571,7 +628,8 @@ function buildTree(files){
     return Object.values(map).map(n=>{
       const ch=toArr(n.children,depth+1);
       const isD64=n.name.toLowerCase().endsWith('.d64');
-      return{name:n.name,path:n.path,depth,isD64,file:n.file,children:ch};
+      const isM3u=n.name.toLowerCase().endsWith('.m3u');
+      return{name:n.name,path:n.path,depth,isD64,isM3u,file:n.file,children:ch};
     }).sort((a,b)=>{
       if(a.isD64!==b.isD64)return a.isD64?1:-1;
       return a.name.localeCompare(b.name,undefined,{numeric:true});
@@ -599,12 +657,13 @@ function renderTree(){
     tog.style.marginLeft=(n.depth*12)+'px';
     tog.textContent=hasKids?(expanded.has(n.path)?'▾':'▸'):'';
     const nm=document.createElement('span');
-    nm.className='nn '+(n.isD64?'d64':hasKids?'fld':'fil');
+    nm.className='nn '+(n.isD64?'d64':n.isM3u?'m3u':hasKids?'fld':'fil');
     nm.textContent=n.name;
     row.appendChild(tog);row.appendChild(nm);
     row.addEventListener('click',()=>{
       if(hasKids){expanded.has(n.path)?expanded.delete(n.path):expanded.add(n.path);renderTree();}
       if(n.isD64&&n.file){selNode=n;renderTree();loadD64(n.file,n.name);}
+      if(n.isM3u&&n.file){selNode=n;renderTree();loadM3U(n.file,n.name);}
     });
     frag.appendChild(row);
   });
@@ -622,9 +681,8 @@ function loadFolder(fileList){
   const mobile=/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)||window.innerWidth<=900;
   if(mobile){
     const allD64=[];
-    function collectD64(nodes){nodes.forEach(n=>{if(n.isD64&&n.file)allD64.push(n);collectD64(n.children);});}
+    function collectD64(nodes){nodes.forEach(n=>{if((n.isD64||n.isM3u)&&n.file)allD64.push(n);collectD64(n.children);});}
     collectD64(roots);
-    // Přepíšeme roots na plochou strukturu
     roots=allD64.map(n=>({...n,depth:0,children:[]}));
     expanded=new Set();
   }
