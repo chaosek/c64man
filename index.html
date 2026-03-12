@@ -229,7 +229,7 @@ body.play-mode #rz2 { display:none; }
 
 <div id="top">
   <div class="logo"><b>★</b> C64 DISK MANAGER <b>★</b></div>
-  <span id="ver">V5.9</span>
+  <span id="ver">V6.0</span>
   <span id="clk"></span>
 </div>
 
@@ -392,6 +392,31 @@ let roots=[],expanded=new Set(),selNode=null,flatNodes=[];
 // ══ EMULATOR ════════════════════════════════════════════════════
 let emuRunning=false;
 
+// Prázdná D64 — validní struktura, žádné soubory → VICE nenajde co spustit → BASIC prompt
+function makeEmptyD64(){
+  const d=new Uint8Array(174848);
+  // BAM sektor 18/0
+  const bamOff=(17*21)*256; // track 18 = 17 tracks před ním, každý 21 sektorů
+  // jednodušší: použijeme přesný offset
+  // Track 1-17: 21 sektorů, Track 18-24: 19, atd. — ale stačí prázdný s validním BAM
+  // Offset track 18, sector 0 = 0x16500
+  const bam=0x16500;
+  d[bam+0]=18; // next track (adresář)
+  d[bam+1]=1;  // next sector
+  d[bam+2]=0x41; // DOS version 'A'
+  d[bam+3]=0;
+  // Disk name: "EMPTY           " + ID "2A"
+  const dname="EMPTY DISK      ";
+  for(let i=0;i<16;i++)d[bam+144+i]=dname.charCodeAt(i)&0x7f;
+  d[bam+160]=0xa0;d[bam+161]=0xa0;
+  d[bam+162]=0x32;d[bam+163]=0x41; // "2A"
+  d[bam+164]=0xa0;d[bam+165]=0x32;d[bam+166]=0x41;
+  // Adresář track 18, sector 1 — prázdný (všechny sloty 0)
+  const dir=0x16600; // track 18 sector 1
+  d[dir+0]=0; d[dir+1]=0xff; // konec řetězu
+  return d;
+}
+
 function buildSrcdoc(gameUrl){
   const js=[
     'window.EJS_player='+JSON.stringify('#game')+';',
@@ -430,30 +455,33 @@ function buildSrcdoc(gameUrl){
     +'</body></html>';
 }
 
+function swapDiskInFS(data, diskName){
+  const frame=document.getElementById('emu-frame');
+  const cw=frame&&frame.contentWindow;
+  const FS=cw&&cw.EJS_emulator&&cw.EJS_emulator.gameManager&&cw.EJS_emulator.gameManager.FS;
+  if(!FS)return false;
+  try{
+    try{FS.unlink('/disk.d64');}catch(e){}
+    FS.writeFile('/disk.d64',new Uint8Array(data));
+    setS('DISK MOUNTED: '+(diskName||''));
+    document.getElementById('ep-title').textContent=diskName||'DISK';
+    return true;
+  }catch(e){setS('SWAP ERROR: '+e.message);return false;}
+}
+
 function mountOnly(){
   if(!curDisk){setS('NO DISK LOADED');return;}
 
-  // Emulator běží → jen vyměníme soubor v FS
+  // Emulator již běží → jen swap
   if(emuRunning){
-    const frame=document.getElementById('emu-frame');
-    const cw=frame&&frame.contentWindow;
-    const FS=cw&&cw.EJS_emulator&&cw.EJS_emulator.gameManager&&cw.EJS_emulator.gameManager.FS;
-    if(FS){
-      try{
-        try{FS.unlink('/disk.d64');}catch(e){}
-        FS.writeFile('/disk.d64',new Uint8Array(curDisk.data));
-        setS('DISK SWAPPED: '+curDisk.diskName.trim());
-        document.getElementById('ep-title').textContent=curDisk.diskName.trim()||'DISK';
-      }catch(e){setS('SWAP ERROR: '+e.message);}
-      return;
-    }
-    // FS nedostupný — fallback na restart
+    swapDiskInFS(curDisk.data, curDisk.diskName.trim());
+    return;
   }
 
-  // Emulator neběží → spustíme nový
+  // Emulator neběží → spustíme s PRÁZDNOU D64, pak swapneme reálnou
   if(emuBlobUrl){URL.revokeObjectURL(emuBlobUrl);emuBlobUrl=null;}
-  const blob=new Blob([curDisk.data],{type:'application/octet-stream'});
-  emuBlobUrl=URL.createObjectURL(blob);
+  const emptyBlob=new Blob([makeEmptyD64()],{type:'application/octet-stream'});
+  emuBlobUrl=URL.createObjectURL(emptyBlob);
 
   const name=curDisk.diskName.trim()||'DISK';
   document.getElementById('ep-title').textContent=name;
@@ -465,9 +493,20 @@ function mountOnly(){
 
   const frame=document.getElementById('emu-frame');
   frame.srcdoc='';
+
+  // Uložíme referenci na data pro swap po startu
+  const diskData=curDisk.data;
+  const diskName=name;
+
   setTimeout(()=>{
     frame.srcdoc=buildSrcdoc(emuBlobUrl);
     emuRunning=true;
+    // Po načtení emulátoru swapneme reálnou disketu
+    let tries=0;
+    const iv=setInterval(()=>{
+      if(++tries>120){clearInterval(iv);setS('TIMEOUT: manual swap needed');return;}
+      if(swapDiskInFS(diskData,diskName)){clearInterval(iv);}
+    },500);
   },150);
 }
 
