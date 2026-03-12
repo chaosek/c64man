@@ -229,7 +229,7 @@ body.play-mode #rz2 { display:none; }
 
 <div id="top">
   <div class="logo"><b>★</b> C64 DISK MANAGER <b>★</b></div>
-  <span id="ver">V6.3</span>
+  <span id="ver">V6.4d</span>
   <span id="clk"></span>
 </div>
 
@@ -461,18 +461,37 @@ function swapDiskInFS(data, diskName){
   const FS=cw&&cw.EJS_emulator&&cw.EJS_emulator.gameManager&&cw.EJS_emulator.gameManager.FS;
   if(!FS)return false;
   try{
-    try{FS.unlink('//empty.prg');}catch(e){}
-    FS.writeFile('//empty.prg', new Uint8Array(data));
+    // Zapiš D64 na novou cestu
+    try{FS.unlink('//disk.d64');}catch(e){}
+    FS.writeFile('//disk.d64', new Uint8Array(data));
 
-    // Zkus říct VICE ať znovu připojí disk přes retroarch disk control
-    const emu=cw.EJS_emulator;
-    if(emu&&emu.gameManager){
-      const gm=emu.gameManager;
-      // Zkus eject + insert
-      try{gm.Module.retro_set_eject_state&&gm.Module.retro_set_eject_state(1);}catch(e){}
-      setTimeout(()=>{
-        try{gm.Module.retro_set_eject_state&&gm.Module.retro_set_eject_state(0);}catch(e){}
-      },200);
+    // Zkus VICE monitor příkaz přes retro_cheat nebo jiný kanál
+    const gm=cw.EJS_emulator&&cw.EJS_emulator.gameManager;
+    if(gm&&gm.Module){
+      const M=gm.Module;
+      // Zkus retro_load_game s novou cestou
+      try{
+        if(M.retro_load_game){
+          M.retro_load_game({path:'//disk.d64',data:0,size:0,meta:''});
+          console.log('retro_load_game called');
+        }
+      }catch(e){console.log('retro_load_game err:',e);}
+
+      // Zkus ccw (VICE command) pokud existuje
+      try{
+        if(M.ccw){M.ccw('attach8 //disk.d64');console.log('ccw called');}
+      }catch(e){}
+
+      // Zkus retro_set_eject + retro_get_image_path
+      try{
+        if(M.retro_disk_control_set_eject_state){
+          M.retro_disk_control_set_eject_state(1);
+          if(M.retro_disk_control_replace_image_index)
+            M.retro_disk_control_replace_image_index(0,{path:'//disk.d64',meta:''});
+          M.retro_disk_control_set_eject_state(0);
+          console.log('disk control called');
+        }
+      }catch(e){console.log('disk control err:',e);}
     }
 
     setS('DISK MOUNTED: '+(diskName||''));
