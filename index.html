@@ -229,7 +229,7 @@ body.play-mode #rz2 { display:none; }
 
 <div id="top">
   <div class="logo"><b>★</b> C64 DISK MANAGER <b>★</b></div>
-  <span id="ver">V6.2d</span>
+  <span id="ver">V6.3</span>
   <span id="clk"></span>
 </div>
 
@@ -461,26 +461,19 @@ function swapDiskInFS(data, diskName){
   const FS=cw&&cw.EJS_emulator&&cw.EJS_emulator.gameManager&&cw.EJS_emulator.gameManager.FS;
   if(!FS)return false;
   try{
-    try{FS.unlink('/disk.d64');}catch(e){}
-    FS.writeFile('/disk.d64',new Uint8Array(data));
+    try{FS.unlink('//empty.prg');}catch(e){}
+    FS.writeFile('//empty.prg', new Uint8Array(data));
 
-    // Debug po zápisu - hledáme kde je původní empty.prg
-    try{
-      console.log('FS root after write:',FS.readdir('/'));
-      function lsR(path,depth){
-        if(depth>4)return;
-        try{
-          FS.readdir(path).filter(x=>x!='.'&&x!='..').forEach(x=>{
-            const full=path+'/'+x;
-            try{
-              FS.readdir(full);
-              lsR(full,depth+1);
-            }catch(e){console.log('FILE:',full);}
-          });
-        }catch(e){}
-      }
-      lsR('/',0);
-    }catch(e){console.log('debug err',e);}
+    // Zkus říct VICE ať znovu připojí disk přes retroarch disk control
+    const emu=cw.EJS_emulator;
+    if(emu&&emu.gameManager){
+      const gm=emu.gameManager;
+      // Zkus eject + insert
+      try{gm.Module.retro_set_eject_state&&gm.Module.retro_set_eject_state(1);}catch(e){}
+      setTimeout(()=>{
+        try{gm.Module.retro_set_eject_state&&gm.Module.retro_set_eject_state(0);}catch(e){}
+      },200);
+    }
 
     setS('DISK MOUNTED: '+(diskName||''));
     document.getElementById('ep-title').textContent=diskName||'DISK';
