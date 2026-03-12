@@ -229,7 +229,7 @@ body.play-mode #rz2 { display:none; }
 
 <div id="top">
   <div class="logo"><b>★</b> C64 DISK MANAGER <b>★</b></div>
-  <span id="ver">V6.5</span>
+  <span id="ver">V6.6</span>
   <span id="clk"></span>
 </div>
 
@@ -429,13 +429,63 @@ function buildSrcdoc(gameUrl,gameName){
     +'</body></html>';
 }
 
+function launchPrg(entry){
+  if(!curDisk){setS('NO DISK');return;}
+  if(emuBlobUrl){URL.revokeObjectURL(emuBlobUrl);emuBlobUrl=null;}
+  // Extrahuj PRG ze D64
+  const d=new Uint8Array(curDisk.data);
+  function secOff(t,s){
+    const tOff=[0,0,21,42,63,84,105,126,147,168,189,210,231,252,273,294,315,336,357,376,395,414,433,452,471,490,508,526,544,562,580,598,615,632,649,666];
+    return(tOff[t]+s)*256;
+  }
+  const FTYPES=['DEL','SEQ','PRG','USR','REL','CBM','DIR','???'];
+  function readPet(d,off,len){
+    let s='';for(let i=0;i<len;i++){const c=d[off+i]&0x7f;s+=c<32?'?':String.fromCharCode(c);}
+    return s.replace(/\xa0/g,' ').trimEnd();
+  }
+  const name=entry.filename.trim().toUpperCase();
+  let tr=18,sc=1,found=null;
+  outer:for(let guard=0;guard<100;guard++){
+    const base=secOff(tr,sc);
+    for(let i=0;i<8;i++){
+      const off=base+i*32;
+      if(d[off+2]===0)continue;
+      const ft=FTYPES[d[off+2]&0x07];
+      const fn=readPet(d,off+5,16).toUpperCase();
+      if(ft==='PRG'&&fn===name){found={t:d[off+3],s:d[off+4]};break outer;}
+    }
+    const nt=d[base],ns=d[base+1];
+    if(!nt)break;
+    tr=nt;sc=ns;
+  }
+  if(!found){setS('FILE NOT FOUND: '+name);return;}
+  const bytes=[];
+  let ct=found.t,cs=found.s;
+  for(let guard=0;guard<1000&&ct!==0;guard++){
+    const so=secOff(ct,cs);
+    const nt=d[so],ns=d[so+1];
+    const len=nt===0?ns-1:254;
+    for(let j=2;j<2+len;j++)bytes.push(d[so+j]);
+    if(nt===0)break;
+    ct=nt;cs=ns;
+  }
+  const prg=new Uint8Array(bytes);
+  const blob=new Blob([prg],{type:'application/octet-stream'});
+  emuBlobUrl=URL.createObjectURL(blob);
+  const gameName=entry.filename.trim()+'.prg';
+  const n=entry.filename.trim();
+  document.getElementById('ep-title').textContent=n;
+  document.getElementById('ep-sub').textContent='PRG · '+entry.blocks+' BLK';
+  document.getElementById('prev-info').textContent='PRG';
+  document.getElementById('emu-placeholder').style.display='none';
+  document.body.classList.add('has-game');
+  document.body.classList.add('play-mode');
+  const frame=document.getElementById('emu-frame');
+  frame.srcdoc='';
+  setTimeout(()=>{ frame.srcdoc=buildSrcdoc(emuBlobUrl,gameName); },150);
+}
 function mountOnly(){
   if(!curDisk){setS('NO DISK LOADED');return;}
-  if(emuBlobUrl){URL.revokeObjectURL(emuBlobUrl);emuBlobUrl=null;}
-  const blob=new Blob([curDisk.data],{type:'application/octet-stream'});
-  emuBlobUrl=URL.createObjectURL(blob);
-  const name=curDisk.diskName.trim()||'DISK';
-  document.getElementById('ep-title').textContent=name;
   document.getElementById('ep-sub').textContent='D64 MOUNTED';
   document.getElementById('prev-info').textContent='D64';
   document.getElementById('emu-placeholder').style.display='none';
@@ -480,6 +530,9 @@ function renderDir(info,name){
   scr.scrollTop=0;
 
   scr.querySelector('.mount-entry').addEventListener('click',mountOnly);
+  scr.querySelectorAll('.dl.entry:not(.mount-entry)').forEach(el=>{
+    el.addEventListener('click',()=>launchPrg(info.entries[+el.dataset.i]));
+  });
 
   document.getElementById('dp-title').textContent='*** '+info.diskName.trim()+' ***';
   document.getElementById('dp-sub').textContent=info.entries.length+' FILES';
