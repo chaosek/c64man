@@ -241,7 +241,7 @@ body.play-mode #rz2 { display:none; }
 
 <div id="top">
   <div class="logo"><b>★</b> C64 DISK MANAGER <b>★</b></div>
-  <span id="ver">V6.8</span>
+  <span id="ver">V6.9</span>
   <span id="clk"></span>
 </div>
 
@@ -460,9 +460,19 @@ function startEmu(data, gameName, title, sub){
   document.getElementById('emu-placeholder').style.display='none';
   document.body.classList.add('has-game');
   document.body.classList.add('play-mode');
-  const frame=document.getElementById('emu-frame');
-  frame.srcdoc='';
-  setTimeout(()=>{ frame.srcdoc=buildSrcdoc(emuBlobUrl,gameName); },150);
+
+  // Odstraň starý iframe a vytvoř nový — uvolní WASM paměť
+  const prevBody=document.getElementById('prev-body');
+  const oldFrame=document.getElementById('emu-frame');
+  if(oldFrame) oldFrame.remove();
+  const frame=document.createElement('iframe');
+  frame.id='emu-frame';
+  frame.setAttribute('allowfullscreen','');
+  frame.setAttribute('allow','autoplay; gamepad');
+  prevBody.insertBefore(frame, prevBody.firstChild);
+
+  const url=emuBlobUrl;
+  setTimeout(()=>{ frame.srcdoc=buildSrcdoc(url,gameName); },150);
 }
 
 function launchPrg(entry){
