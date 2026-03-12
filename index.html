@@ -419,7 +419,7 @@ let curDisk=null,curDiskPath='',entries_ref=[],emuBlobUrl=null,curM3uDisks=null;
 let roots=[],expanded=new Set(),selNode=null,flatNodes=[];
 
 // ══ EMULATOR ════════════════════════════════════════════════════
-function buildSrcdoc(gameUrl,gameName){
+function buildSrcdoc(gameUrl,gameName,paths){
   const js=[
     'window.EJS_player='+JSON.stringify('#game')+';',
     'window.EJS_core='+JSON.stringify('vice_x64sc')+';',
@@ -432,6 +432,7 @@ function buildSrcdoc(gameUrl,gameName){
     'window.EJS_backgroundColor="#000000";',
     'window.EJS_color="#3535c0";',
     'window.EJS_AdUrl="";',
+    paths?'window.EJS_paths='+JSON.stringify(paths)+';':'',
     'window.EJS_Buttons={playPause:false,restart:true,mute:true,settings:true,fullscreen:true,saveState:true,loadState:true,screenRecord:false,gamepad:true,cheat:false,volume:true};',
   ].join('\n');
   const onStart=[
@@ -457,7 +458,7 @@ function buildSrcdoc(gameUrl,gameName){
     +'</body></html>';
 }
 
-function startEmu(gameUrl, gameName, title, sub, info){
+function startEmu(gameUrl, gameName, title, sub, info, paths){
   document.getElementById('ep-title').textContent=title;
   document.getElementById('ep-sub').textContent=sub;
   document.getElementById('prev-info').textContent=info;
@@ -467,7 +468,7 @@ function startEmu(gameUrl, gameName, title, sub, info){
 
   const frame=document.getElementById('emu-frame');
   frame.srcdoc='';
-  setTimeout(()=>{ frame.srcdoc=buildSrcdoc(gameUrl,gameName); },150);
+  setTimeout(()=>{ frame.srcdoc=buildSrcdoc(gameUrl,gameName,paths); },150);
 }
 
 function launchEmulator(entry){
@@ -480,7 +481,7 @@ function launchEmulator(entry){
   const blob=new Blob([prg],{type:'application/octet-stream'});
   emuBlobUrl=URL.createObjectURL(blob);
   const gameName=(entry.fnVice||entry.filename).trim()+'.prg';
-  startEmu(emuBlobUrl, gameName, entry.filename, entry.type+' · '+entry.blocks+' BLK', 'PRG·'+entry.blocks+'BLK');
+  startEmu(emuBlobUrl, gameName, entry.filename, entry.type+' · '+entry.blocks+' BLK', 'PRG·'+entry.blocks+'BLK', null);
 }
 
 function mountDisk(){
@@ -488,31 +489,35 @@ function mountDisk(){
   if(emuBlobUrl){URL.revokeObjectURL(emuBlobUrl);emuBlobUrl=null;}
 
   if(curM3uDisks&&curM3uDisks.length>1){
-    // M3U mode — načti všechny D64 a sestav zip-like blob
-    // VICE přijímá M3U jako textový soubor se seznamem D64
-    // Musíme použít VFS — předáme první D64 a M3U jako samostatné soubory
-    // EmulatorJS podporuje EJS_gameUrl jako M3U pokud gameName končí .m3u
     const reads=curM3uDisks.map(f=>new Promise((res,rej)=>{
       const r=new FileReader();
-      r.onload=e=>res({name:f.name,data:new Uint8Array(e.target.result)});
+      r.onload=e=>res({name:f.name,data:new Uint8Array(e.target.result),file:f});
       r.onerror=rej;
       r.readAsArrayBuffer(f);
     }));
     Promise.all(reads).then(disks=>{
-      const m3uText=disks.map(d=>d.name).join('\n');
+      // Vytvoř blob URL pro každý disk
+      const diskUrls=disks.map(d=>{
+        const b=new Blob([d.data],{type:'application/octet-stream'});
+        return{name:d.name,url:URL.createObjectURL(b)};
+      });
+      // M3U obsah — seznam názvů disků
+      const m3uText=diskUrls.map(d=>d.name).join('\n');
       const m3uBlob=new Blob([m3uText],{type:'text/plain'});
-      // EmulatorJS nepodporuje M3U přímo — použijeme první disk a informujeme uživatele
-      const blob=new Blob([disks[0].data],{type:'application/octet-stream'});
-      emuBlobUrl=URL.createObjectURL(blob);
+      const m3uUrl=URL.createObjectURL(m3uBlob);
+      // EJS_paths — vloží všechny soubory do VFS
+      const paths={};
+      diskUrls.forEach(d=>paths[d.name]=d.url);
+      paths['playlist.m3u']=m3uUrl;
+      emuBlobUrl=m3uUrl;
       const name=curDisk.diskName.trim()||'DISK';
-      startEmu(emuBlobUrl,'disk.d64',name,'D64 MOUNTED ('+disks.length+' DISKS)','D64·M3U');
-      setS('MOUNTED '+disks.length+' DISK PLAYLIST — USE DISC CONTROL TO SWAP');
+      startEmu(m3uUrl,'playlist.m3u',name,'M3U ('+disks.length+' DISKS)','M3U',paths);
     });
   } else {
     const blob=new Blob([curDisk.data],{type:'application/octet-stream'});
     emuBlobUrl=URL.createObjectURL(blob);
     const name=curDisk.diskName.trim()||'DISK';
-    startEmu(emuBlobUrl,'disk.d64',name,'D64 MOUNTED','D64');
+    startEmu(emuBlobUrl,'disk.d64',name,'D64 MOUNTED','D64',null);
   }
 }
 
