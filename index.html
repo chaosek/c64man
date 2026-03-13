@@ -241,7 +241,7 @@ body.play-mode #rz2 { display:none; }
 
 <div id="top">
   <div class="logo"><b>★</b> C64 DISK MANAGER <b>★</b></div>
-  <span id="ver">V7.1</span>
+  <span id="ver">V7.2</span>
   <span id="clk"></span>
 </div>
 
@@ -451,13 +451,6 @@ function buildSrcdoc(gameUrl,gameName){
 }
 
 function startEmu(data, gameName, title, sub){
-  // Revokuj starý blob až teď (předchozí hra už nepotřebuje)
-  if(emuBlobUrl){URL.revokeObjectURL(emuBlobUrl);emuBlobUrl=null;}
-
-  const blob=new Blob([data],{type:'application/octet-stream'});
-  const url=URL.createObjectURL(blob);
-  emuBlobUrl=url;
-
   document.getElementById('ep-title').textContent=title;
   document.getElementById('ep-sub').textContent=sub;
   document.getElementById('prev-info').textContent=sub;
@@ -465,21 +458,25 @@ function startEmu(data, gameName, title, sub){
   document.body.classList.add('has-game');
   document.body.classList.add('play-mode');
 
-  // Odstraň starý iframe — uvolní WASM paměť předchozí instance
+  // Krok 1: odstraň starý iframe, revokuj blob — dej prohlížeči čas uvolnit WASM
   const prevBody=document.getElementById('prev-body');
   const oldFrame=document.getElementById('emu-frame');
   if(oldFrame) oldFrame.remove();
+  if(emuBlobUrl){URL.revokeObjectURL(emuBlobUrl);emuBlobUrl=null;}
 
-  const frame=document.createElement('iframe');
-  frame.id='emu-frame';
-  frame.setAttribute('allowfullscreen','');
-  frame.setAttribute('allow','autoplay; gamepad');
-  prevBody.insertBefore(frame, document.getElementById('prev-info'));
-
+  // Krok 2: vytvoř blob a nový iframe až po pauze
+  const blob=new Blob([data],{type:'application/octet-stream'});
   setTimeout(()=>{
-    frame.srcdoc=buildSrcdoc(url, gameName);
-    // Revokuj blob až po dalším startu — ne teď
-  }, 250);
+    const url=URL.createObjectURL(blob);
+    emuBlobUrl=url;
+    const frame=document.createElement('iframe');
+    frame.id='emu-frame';
+    frame.setAttribute('allowfullscreen','');
+    frame.setAttribute('allow','autoplay; gamepad');
+    prevBody.insertBefore(frame, document.getElementById('prev-info'));
+    // Krok 3: nastavíme srcdoc až po dalším ticku
+    setTimeout(()=>{ frame.srcdoc=buildSrcdoc(url, gameName); }, 100);
+  }, 500);
 }
 
 function launchPrg(entry){
