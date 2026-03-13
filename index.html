@@ -241,7 +241,7 @@ body.play-mode #rz2 { display:none; }
 
 <div id="top">
   <div class="logo"><b>★</b> C64 DISK MANAGER <b>★</b></div>
-  <span id="ver">V7.3</span>
+  <span id="ver">V7.4</span>
   <span id="clk"></span>
 </div>
 
@@ -451,9 +451,14 @@ function buildSrcdoc(gameUrl,gameName){
 }
 
 function startEmu(data, gameName, title, sub){
-  if(emuBlobUrl){URL.revokeObjectURL(emuBlobUrl);emuBlobUrl=null;}
+  // Vytvoř nový blob — starý NEREVOKOVÁVEJ (iframe ho možná ještě čte)
   const blob=new Blob([data],{type:'application/octet-stream'});
-  emuBlobUrl=URL.createObjectURL(blob);
+  const url=URL.createObjectURL(blob);
+
+  // Revokuj starý až po delší době
+  const oldUrl=emuBlobUrl;
+  emuBlobUrl=url;
+  if(oldUrl) setTimeout(()=>URL.revokeObjectURL(oldUrl), 5000);
 
   document.getElementById('ep-title').textContent=title;
   document.getElementById('ep-sub').textContent=sub;
@@ -463,7 +468,6 @@ function startEmu(data, gameName, title, sub){
   document.body.classList.add('play-mode');
 
   const frame=document.getElementById('emu-frame');
-  const url=emuBlobUrl;
   frame.srcdoc='';
   setTimeout(()=>{ frame.srcdoc=buildSrcdoc(url,gameName); },150);
 }
