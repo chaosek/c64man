@@ -241,7 +241,7 @@ body.play-mode #rz2 { display:none; }
 
 <div id="top">
   <div class="logo"><b>★</b> C64 DISK MANAGER <b>★</b></div>
-  <span id="ver">V7.4</span>
+  <span id="ver">V7.4d</span>
   <span id="clk"></span>
 </div>
 
@@ -469,7 +469,20 @@ function startEmu(data, gameName, title, sub){
 
   const frame=document.getElementById('emu-frame');
   frame.srcdoc='';
-  setTimeout(()=>{ frame.srcdoc=buildSrcdoc(url,gameName); },150);
+  setTimeout(()=>{
+    const srcdoc=buildSrcdoc(url,gameName);
+    console.log('Setting srcdoc, url=',url,'gameName=',gameName,'srcdoc length=',srcdoc.length);
+    frame.srcdoc=srcdoc;
+    // Po 3s zkontroluj jestli se iframe načetl
+    setTimeout(()=>{
+      try{
+        const cw=frame.contentWindow;
+        console.log('iframe contentWindow:', cw?'OK':'NULL');
+        console.log('EJS_emulator:', cw&&cw.EJS_emulator?'EXISTS':'MISSING');
+        console.log('iframe srcdoc length:', frame.srcdoc.length);
+      }catch(e){console.log('iframe check err:',e);}
+    },3000);
+  },150);
 }
 
 function launchPrg(entry){
