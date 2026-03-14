@@ -241,7 +241,7 @@ body.play-mode #rz2 { display:none; }
 
 <div id="top">
   <div class="logo"><b>★</b> C64 DISK MANAGER <b>★</b></div>
-  <span id="ver">V7.5</span>
+  <span id="ver">V7.6</span>
   <span id="clk"></span>
 </div>
 
@@ -450,16 +450,13 @@ function buildSrcdoc(gameUrl,gameName){
     +'</body></html>';
 }
 
-const isAndroid=/Android/i.test(navigator.userAgent);
-
-function toDataURI(data,mime){
-  const bytes=data instanceof Uint8Array?data:new Uint8Array(data);
-  let bin='';
-  for(let i=0;i<bytes.length;i++)bin+=String.fromCharCode(bytes[i]);
-  return 'data:'+mime+';base64,'+btoa(bin);
-}
-
 function startEmu(data, gameName, title, sub){
+  const blob=new Blob([data],{type:'application/octet-stream'});
+  const newUrl=URL.createObjectURL(blob);
+  const oldUrl=emuBlobUrl;
+  emuBlobUrl=newUrl;
+  if(oldUrl) setTimeout(()=>URL.revokeObjectURL(oldUrl), 5000);
+
   document.getElementById('ep-title').textContent=title;
   document.getElementById('ep-sub').textContent=sub;
   document.getElementById('prev-info').textContent=sub;
@@ -467,23 +464,14 @@ function startEmu(data, gameName, title, sub){
   document.body.classList.add('has-game');
   document.body.classList.add('play-mode');
 
-  let url;
-  if(isAndroid){
-    // Android: blob URL nefunguje v srcdoc iframe — použij data URI
-    url=toDataURI(data,'application/octet-stream');
-  } else {
-    // PC: blob URL, revokuj starý až za 5s
-    const blob=new Blob([data],{type:'application/octet-stream'});
-    const newUrl=URL.createObjectURL(blob);
-    const oldUrl=emuBlobUrl;
-    emuBlobUrl=newUrl;
-    if(oldUrl) setTimeout(()=>URL.revokeObjectURL(oldUrl), 5000);
-    url=newUrl;
-  }
-
-  const frame=document.getElementById('emu-frame');
-  frame.srcdoc='';
-  setTimeout(()=>{ frame.srcdoc=buildSrcdoc(url,gameName); },150);
+  const old=document.getElementById('emu-frame');
+  const frame=document.createElement('iframe');
+  frame.id='emu-frame';
+  frame.style.cssText='position:absolute;inset:0;width:100%!important;height:100%!important;border:none;display:block;';
+  frame.src='about:blank';
+  old.parentNode.replaceChild(frame,old);
+  const srcdoc=buildSrcdoc(newUrl,gameName);
+  setTimeout(()=>{ frame.removeAttribute('src'); frame.srcdoc=srcdoc; },300);
 }
 
 function launchPrg(entry){
