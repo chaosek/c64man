@@ -259,7 +259,7 @@ body.play-mode #rz2 { display:none; }
 
 <div id="top">
   <div class="logo"><b>★</b> C64 DISK MANAGER <b>★</b></div>
-  <span id="ver">V7.9</span>
+  <span id="ver">V8.0</span>
   <span id="clk"></span>
 </div>
 
@@ -273,11 +273,11 @@ body.play-mode #rz2 { display:none; }
     </div>
     <!-- TABS -->
     <div id="lp-tabs">
-      <div class="lp-tab active" id="tab-local" onclick="switchTab('local')">LOCAL</div>
-      <div class="lp-tab" id="tab-online" onclick="switchTab('online')">ONLINE</div>
+      <div class="lp-tab" id="tab-local" onclick="switchTab('local')">LOCAL</div>
+      <div class="lp-tab active" id="tab-online" onclick="switchTab('online')">ONLINE</div>
     </div>
     <!-- LOCAL VIEW -->
-    <div id="lp-local">
+    <div id="lp-local" style="display:none">
       <div id="dz">
         <div class="di">💾</div>
         <div class="dt">LOAD FOLDER</div>
@@ -293,7 +293,7 @@ body.play-mode #rz2 { display:none; }
       <div id="tw"><div id="tree"></div></div>
     </div>
     <!-- ONLINE VIEW -->
-    <div id="lp-online" style="display:none">
+    <div id="lp-online">
       <div id="online-token-box">
         <div class="on-label">GITHUB TOKEN</div>
         <input id="online-token" type="password" placeholder="ghp_..." spellcheck="false">
@@ -483,7 +483,10 @@ async function onlineFetch(token){
       el.className='on-item';
       el.textContent=f.name.replace(/\.d64$/i,'').toUpperCase();
       el.title=f.name;
-      el.addEventListener('click',()=>onlineLoad(f,token));
+      el.addEventListener('click',()=>{
+        document.body.classList.remove('play-mode');
+        onlineLoad(f,token);
+      });
       list.appendChild(el);
     });
     setS('ONLINE: '+d64s.length+' FILES');
@@ -526,6 +529,9 @@ document.getElementById('online-connect').addEventListener('click',()=>{
   localStorage.setItem('c64_gh_token',token);
   onlineFetch(token);
 });
+
+// Spusť online panel při startu
+onlineInit();
 
 // ══ STATE ════════════════════════════════════════════════════════
 let curDisk=null,curDiskPath='',entries_ref=[],emuBlobUrl=null;
