@@ -259,7 +259,7 @@ body.play-mode #rz2 { display:none; }
 
 <div id="top">
   <div class="logo"><b>★</b> C64 DISK MANAGER <b>★</b></div>
-  <span id="ver">V7.8</span>
+  <span id="ver">V7.9</span>
   <span id="clk"></span>
 </div>
 
@@ -495,13 +495,16 @@ async function onlineFetch(token){
 async function onlineLoad(file, token){
   setS('DOWNLOADING: '+file.name+'...');
   const list=document.getElementById('online-list');
-  // Označ jako loading
   [...list.querySelectorAll('.on-item')].forEach(el=>{
     el.classList.toggle('loading', el.title===file.name);
   });
   try{
-    const resp=await fetch(file.download_url,{
-      headers:{'Authorization':'Bearer '+token}
+    // Pro privátní repo použij API endpoint s Accept: raw
+    const resp=await fetch(`https://api.github.com/repos/${ONLINE_REPO}/contents/${ONLINE_PATH}/${file.name}`,{
+      headers:{
+        'Authorization':'Bearer '+token,
+        'Accept':'application/vnd.github.v3.raw'
+      }
     });
     if(!resp.ok){setS('DOWNLOAD ERROR '+resp.status);return;}
     const buf=await resp.arrayBuffer();
