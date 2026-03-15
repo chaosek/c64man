@@ -125,6 +125,24 @@ body { background:var(--bg); display:flex; flex-direction:column; font-family:va
 .ntog { width:14px; flex-shrink:0; text-align:center; font-size:13px; color:var(--c64txt); }
 .nn { font-size:13px; line-height:18px; font-weight:700; letter-spacing:.5px; text-transform:uppercase; flex:1; overflow:hidden; text-overflow:ellipsis; color:var(--c64txt); }
 .nn.fld { color:var(--c64white); }
+/* TABS */
+#lp-tabs { display:flex; flex-shrink:0; border-bottom:1px solid var(--c64bord); background:var(--c64dark); }
+.lp-tab { flex:1; text-align:center; padding:4px 0; font-size:10px; font-weight:700; letter-spacing:2px; color:var(--c64txt); cursor:pointer; text-transform:uppercase; }
+.lp-tab:hover { color:var(--c64white); }
+.lp-tab.active { color:var(--c64cyan); border-bottom:2px solid var(--c64cyan); }
+#lp-local { display:flex; flex-direction:column; flex:1; overflow:hidden; min-height:0; }
+#lp-online { display:flex; flex-direction:column; flex:1; overflow:hidden; min-height:0; }
+#online-token-box { padding:8px; border-bottom:1px solid var(--c64bord); flex-shrink:0; }
+.on-label { font-size:9px; color:var(--c64txt); letter-spacing:1px; margin-bottom:4px; }
+#online-token { width:100%; background:var(--c64dark); border:1px solid var(--c64bord); color:var(--c64white); font-family:var(--font); font-size:9px; padding:4px 6px; outline:none; margin-bottom:4px; }
+#online-connect { width:100%; background:var(--c64dark); border:1px solid var(--c64cyan); color:var(--c64cyan); font-family:var(--font); font-size:10px; font-weight:700; letter-spacing:2px; padding:4px; cursor:pointer; }
+#online-connect:hover { background:var(--c64cyan); color:var(--c64bg); }
+#online-list { flex:1; overflow-y:auto; overflow-x:hidden; }
+.on-item { padding:5px 10px; font-size:10px; color:var(--c64cyan); cursor:pointer; letter-spacing:1px; border-bottom:1px solid rgba(72,72,200,.15); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.on-item:hover { background:rgba(24,216,216,.1); color:var(--c64white); }
+.on-item.loading { color:var(--c64txt); cursor:default; }
+.on-item.error { color:var(--c64red); cursor:default; }
+
 #joy-sel {
   flex-shrink:0; border-top:1px solid var(--c64bord);
   background:var(--c64dark); z-index:6;
@@ -241,7 +259,7 @@ body.play-mode #rz2 { display:none; }
 
 <div id="top">
   <div class="logo"><b>★</b> C64 DISK MANAGER <b>★</b></div>
-  <span id="ver">V7.6</span>
+  <span id="ver">V7.7</span>
   <span id="clk"></span>
 </div>
 
@@ -253,19 +271,36 @@ body.play-mode #rz2 { display:none; }
       <span class="phdr-t">FILES</span>
       <span class="phdr-s" id="lp-sub">LOAD FOLDER</span>
     </div>
-    <div id="dz">
-      <div class="di">💾</div>
-      <div class="dt">LOAD FOLDER</div>
-      <div class="ds">DRAG OR CLICK</div>
-      <div class="ds">SCANS .D64 FILES</div>
+    <!-- TABS -->
+    <div id="lp-tabs">
+      <div class="lp-tab active" id="tab-local" onclick="switchTab('local')">LOCAL</div>
+      <div class="lp-tab" id="tab-online" onclick="switchTab('online')">ONLINE</div>
     </div>
-    <div id="tb">
-      <button class="tbb" id="btnR">NEW</button>
-      <button class="tbb" id="btnC">CLR</button>
-      <button class="tbb" id="btnE">EXP</button>
-      <input class="tfl" id="tflt" placeholder="SEARCH...">
+    <!-- LOCAL VIEW -->
+    <div id="lp-local">
+      <div id="dz">
+        <div class="di">💾</div>
+        <div class="dt">LOAD FOLDER</div>
+        <div class="ds">DRAG OR CLICK</div>
+        <div class="ds">SCANS .D64 FILES</div>
+      </div>
+      <div id="tb">
+        <button class="tbb" id="btnR">NEW</button>
+        <button class="tbb" id="btnC">CLR</button>
+        <button class="tbb" id="btnE">EXP</button>
+        <input class="tfl" id="tflt" placeholder="SEARCH...">
+      </div>
+      <div id="tw"><div id="tree"></div></div>
     </div>
-    <div id="tw"><div id="tree"></div></div>
+    <!-- ONLINE VIEW -->
+    <div id="lp-online" style="display:none">
+      <div id="online-token-box">
+        <div class="on-label">GITHUB TOKEN</div>
+        <input id="online-token" type="password" placeholder="ghp_..." spellcheck="false">
+        <button id="online-connect">CONNECT</button>
+      </div>
+      <div id="online-list"></div>
+    </div>
     <div id="joy-sel">
       <div class="joy-row" id="joy1" data-port="1">
         <span class="joy-dot" id="joy1-dot"></span>JOY PORT 1
@@ -404,6 +439,90 @@ function parseD64(buf){
   }
   return {diskName,diskId,free,entries,data:buf};
 }
+
+// ══ ONLINE PANEL ════════════════════════════════════════════════
+const ONLINE_REPO='chaosek/D64Files';
+const ONLINE_PATH='games';
+
+function switchTab(tab){
+  document.getElementById('lp-local').style.display=tab==='local'?'flex':'none';
+  document.getElementById('lp-online').style.display=tab==='online'?'flex':'none';
+  document.getElementById('tab-local').classList.toggle('active',tab==='local');
+  document.getElementById('tab-online').classList.toggle('active',tab==='online');
+  if(tab==='online') onlineInit();
+}
+
+function onlineInit(){
+  const saved=localStorage.getItem('c64_gh_token');
+  if(saved){
+    document.getElementById('online-token').value=saved;
+    onlineFetch(saved);
+  }
+}
+
+async function onlineFetch(token){
+  const list=document.getElementById('online-list');
+  list.innerHTML='<div class="on-item loading">LOADING...</div>';
+  try{
+    const resp=await fetch(`https://api.github.com/repos/${ONLINE_REPO}/contents/${ONLINE_PATH}`,{
+      headers:{
+        'Authorization':'Bearer '+token,
+        'Accept':'application/vnd.github.v3+json'
+      }
+    });
+    if(!resp.ok){
+      list.innerHTML='<div class="on-item error">ERROR '+resp.status+' — CHECK TOKEN</div>';
+      return;
+    }
+    const files=await resp.json();
+    const d64s=files.filter(f=>f.name.toLowerCase().endsWith('.d64'));
+    if(!d64s.length){list.innerHTML='<div class="on-item loading">NO D64 FILES FOUND</div>';return;}
+    list.innerHTML='';
+    d64s.forEach(f=>{
+      const el=document.createElement('div');
+      el.className='on-item';
+      el.textContent=f.name.replace(/\.d64$/i,'').toUpperCase();
+      el.title=f.name;
+      el.addEventListener('click',()=>onlineLoad(f,token));
+      list.appendChild(el);
+    });
+    setS('ONLINE: '+d64s.length+' FILES');
+  }catch(e){
+    list.innerHTML='<div class="on-item error">NETWORK ERROR</div>';
+  }
+}
+
+async function onlineLoad(file, token){
+  setS('DOWNLOADING: '+file.name+'...');
+  const list=document.getElementById('online-list');
+  // Označ jako loading
+  [...list.querySelectorAll('.on-item')].forEach(el=>{
+    el.classList.toggle('loading', el.title===file.name);
+  });
+  try{
+    const resp=await fetch(file.download_url,{
+      headers:{'Authorization':'Bearer '+token}
+    });
+    if(!resp.ok){setS('DOWNLOAD ERROR '+resp.status);return;}
+    const buf=await resp.arrayBuffer();
+    const info=parseD64(buf);
+    curDisk=info;
+    curDiskPath=file.name;
+    renderDir(info, file.name);
+    setS('LOADED: '+file.name);
+  }catch(e){
+    setS('DOWNLOAD ERROR: '+e.message);
+  }finally{
+    [...list.querySelectorAll('.on-item')].forEach(el=>el.classList.remove('loading'));
+  }
+}
+
+document.getElementById('online-connect').addEventListener('click',()=>{
+  const token=document.getElementById('online-token').value.trim();
+  if(!token)return;
+  localStorage.setItem('c64_gh_token',token);
+  onlineFetch(token);
+});
 
 // ══ STATE ════════════════════════════════════════════════════════
 let curDisk=null,curDiskPath='',entries_ref=[],emuBlobUrl=null;
